@@ -77,6 +77,7 @@ const CardDisplayStyles = () => (
     .content-block h4 {
       display: flex;
       align-items: center;
+      justify-content: space-between;
       font-family: "Cinzel", serif;
       color: var(--accent);
       font-size: 1.2em;
@@ -157,9 +158,8 @@ interface TarotCardDisplayProps {
   isShuffling: boolean;
 }
 
-// Fix: Define and export the TarotCardDisplay component.
 const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling }) => {
-  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [speakingSection, setSpeakingSection] = useState<string | null>(null);
   const [isResponsiveVoiceReady, setIsResponsiveVoiceReady] = useState(false);
   
   useEffect(() => {
@@ -175,47 +175,41 @@ const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling }
     }
   }, []);
 
-  const textToSpeak = useMemo(() => {
-    if (!card) return '';
-    return [
-      card.name,
-      card.keyword,
-      card.interpretation.short,
-      card.interpretation.long,
-      `Совет для отношений. ${card.interpretation.advice.relationships}`,
-      `Совет для здоровья. ${card.interpretation.advice.health}`,
-      `Совет для денег. ${card.interpretation.advice.money}`,
-      `Аффирмация. ${card.interpretation.intent}`,
-    ].join('. ');
-  }, [card]);
-
-  const toggleSpeech = useCallback(() => {
+  const handleSpeak = useCallback((text: string, sectionId: string) => {
     if (!isResponsiveVoiceReady) {
       console.error('ResponsiveVoice not ready');
       alert('Сервис озвучивания еще не готов. Пожалуйста, подождите несколько секунд и попробуйте снова.');
       return;
     }
-    if (isSpeaking) {
+
+    if (speakingSection === sectionId) {
       window.responsiveVoice.cancel();
-      setIsSpeaking(false);
+      setSpeakingSection(null);
     } else {
-      window.responsiveVoice.speak(textToSpeak, 'Russian Female', {
-        onstart: () => setIsSpeaking(true),
-        onend: () => setIsSpeaking(false),
-        onerror: () => setIsSpeaking(false),
+      if (window.responsiveVoice.isPlaying()) {
+        window.responsiveVoice.cancel();
+      }
+      window.responsiveVoice.speak(text, 'Russian Male', {
+        onstart: () => setSpeakingSection(sectionId),
+        onend: () => setSpeakingSection(null),
+        onerror: () => setSpeakingSection(null),
       });
     }
-  }, [isSpeaking, textToSpeak, isResponsiveVoiceReady]);
+  }, [isResponsiveVoiceReady, speakingSection]);
 
   useEffect(() => {
     // Stop speech when card changes
     return () => {
       if (typeof window.responsiveVoice !== 'undefined' && window.responsiveVoice.isPlaying()) {
         window.responsiveVoice.cancel();
-        setIsSpeaking(false);
+        setSpeakingSection(null);
       }
     };
   }, [card]);
+  
+  const adviceText = useMemo(() => 
+    `Отношения: ${card.interpretation.advice.relationships}. Здоровье: ${card.interpretation.advice.health}. Деньги: ${card.interpretation.advice.money}.`
+  , [card]);
 
   const cardMedia = useMemo(() => {
     if (card.videoUrl) {
@@ -253,27 +247,49 @@ const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling }
           <div className="card-text-column">
             <div className="content-block">
               <h4>
-                Краткое значение
+                <span>Краткое значение</span>
                 <button 
-                  onClick={toggleSpeech} 
+                  onClick={() => handleSpeak(card.interpretation.short, 'short')} 
                   className="speaker-button" 
-                  aria-label="Озвучить текст"
+                  aria-label="Озвучить краткое значение"
                   disabled={!isResponsiveVoiceReady}
-                  title={isResponsiveVoiceReady ? "Озвучить текст" : "Озвучивание загружается..."}
+                  title={isResponsiveVoiceReady ? "Озвучить" : "Озвучивание загружается..."}
                 >
-                  <SpeakerIcon isPlaying={isSpeaking} />
+                  <SpeakerIcon isPlaying={speakingSection === 'short'} />
                 </button>
               </h4>
               <p>{card.interpretation.short}</p>
             </div>
 
             <div className="content-block">
-              <h4>Подробное толкование</h4>
+              <h4>
+                <span>Подробное толкование</span>
+                <button 
+                  onClick={() => handleSpeak(card.interpretation.long, 'long')}
+                  className="speaker-button" 
+                  aria-label="Озвучить подробное толкование"
+                  disabled={!isResponsiveVoiceReady}
+                  title={isResponsiveVoiceReady ? "Озвучить" : "Озвучивание загружается..."}
+                >
+                  <SpeakerIcon isPlaying={speakingSection === 'long'} />
+                </button>
+              </h4>
               <p>{card.interpretation.long}</p>
             </div>
             
             <div className="content-block">
-                <h4>Советы Карты</h4>
+                <h4>
+                  <span>Советы Карты</span>
+                  <button 
+                    onClick={() => handleSpeak(adviceText, 'advice')} 
+                    className="speaker-button" 
+                    aria-label="Озвучить советы карты"
+                    disabled={!isResponsiveVoiceReady}
+                    title={isResponsiveVoiceReady ? "Озвучить" : "Озвучивание загружается..."}
+                  >
+                    <SpeakerIcon isPlaying={speakingSection === 'advice'} />
+                  </button>
+                </h4>
                 <div className="aspects">
                     <div className="aspect-item">
                         <strong>Отношения:</strong>
@@ -291,7 +307,18 @@ const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling }
             </div>
 
             <div className="content-block">
-              <h4>Аффирмация дня</h4>
+              <h4>
+                <span>Аффирмация дня</span>
+                <button 
+                  onClick={() => handleSpeak(card.interpretation.intent, 'intent')}
+                  className="speaker-button" 
+                  aria-label="Озвучить аффирмацию"
+                  disabled={!isResponsiveVoiceReady}
+                  title={isResponsiveVoiceReady ? "Озвучить" : "Озвучивание загружается..."}
+                >
+                  <SpeakerIcon isPlaying={speakingSection === 'intent'} />
+                </button>
+              </h4>
               <p><em>{card.interpretation.intent}</em></p>
             </div>
           </div>
