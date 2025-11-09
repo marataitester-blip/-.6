@@ -104,6 +104,15 @@ const GlobalStyles = () => (
       }
     }
     
+    .card-display-wrapper {
+      margin-top: 32px;
+      transition: filter 0.4s ease-out, transform 0.4s ease-out;
+    }
+    .card-display-wrapper.shuffling-active {
+      filter: blur(4px) brightness(0.8);
+      transform: scale(0.96);
+    }
+
     .app-footer {
       text-align: center;
       margin-top: 48px;
@@ -167,7 +176,7 @@ const App: React.FC = () => {
     shuffleIntervalRef.current = window.setInterval(() => {
       const randomIndex = Math.floor(Math.random() * TAROT_DECK.length);
       setSelectedCard(TAROT_DECK[randomIndex]);
-    }, 120);
+    }, 150);
 
     setTimeout(() => {
       if (shuffleIntervalRef.current) {
@@ -182,7 +191,7 @@ const App: React.FC = () => {
 
       setSelectedCard(TAROT_DECK[finalCardIndex]);
       setIsShuffling(false);
-    }, 2000);
+    }, 3000);
   }, [isShuffling, selectedCard.id]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -264,8 +273,8 @@ const App: React.FC = () => {
             isShuffling={isShuffling}
           />
 
-          <div style={{marginTop: '32px'}}>
-            {selectedCard && <TarotCardDisplay card={selectedCard} />}
+          <div className={`card-display-wrapper ${isShuffling ? 'shuffling-active' : ''}`}>
+            {selectedCard && <TarotCardDisplay card={selectedCard} isShuffling={isShuffling} />}
           </div>
           
           <footer className="app-footer">

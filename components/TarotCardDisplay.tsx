@@ -16,6 +16,9 @@ const CardDisplayStyles = () => (
     .card-display-container {
       animation: fade-in 0.6s ease-out forwards;
     }
+    .card-display-container.is-shuffling {
+      animation: none;
+    }
     @keyframes fade-in {
       from { opacity: 0; transform: translateY(15px); }
       to { opacity: 1; transform: translateY(0); }
@@ -166,9 +169,10 @@ const SpeakButton: React.FC<{ text: string }> = ({ text }) => {
 
 interface TarotCardDisplayProps {
   card: TarotCardData;
+  isShuffling?: boolean;
 }
 
-const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card }) => {
+const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling = false }) => {
   const cardKey = useMemo(() => card.id, [card]);
   const { interpretation } = card;
 
@@ -179,7 +183,7 @@ const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card }) => {
   }, [card]);
 
   return (
-    <div key={cardKey} className="card-display-container interpretation-grid">
+    <div key={cardKey} className={`card-display-container ${isShuffling ? 'is-shuffling' : ''} interpretation-grid`}>
       <CardDisplayStyles />
       <div>
         <div className="card-video-container">
