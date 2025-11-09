@@ -1,17 +1,12 @@
 
-const CACHE_NAME = 'astral-hero-tarot-v1';
+const CACHE_NAME = 'astral-hero-tarot-v2';
 const CDN_BASE_URL = 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/';
 
 // Список всех ресурсов для кэширования
 const URLS_TO_CACHE = [
   '/',
   '/index.html',
-  '/index.tsx',
-  '/App.tsx',
-  '/components/CardSelector.tsx',
-  '/components/TarotCardDisplay.tsx',
-  '/constants.ts',
-  '/types.ts',
+  // TS/TSX files removed from precache, they will be cached at runtime
   'https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Cormorant+Garamond:wght@400;500;600&display=swap',
   'https://code.responsivevoice.org/responsivevoice.js?key=YOUR_KEY',
   `${CDN_BASE_URL}00_fool_anim.mp4`,
