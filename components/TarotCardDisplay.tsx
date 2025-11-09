@@ -97,7 +97,7 @@ const CardDisplayStyles = () => (
     .speaker-button {
       background: transparent;
       border: none;
-      color: var(--muted);
+      color: var(--accent);
       cursor: pointer;
       margin-left: 8px;
       padding: 4px;
@@ -106,8 +106,9 @@ const CardDisplayStyles = () => (
       justify-content: center;
       transition: color 0.2s ease, transform 0.2s ease;
     }
+    .speaker-button.is-playing,
     .speaker-button:hover:not(:disabled) {
-      color: var(--accent);
+      color: #ffd700;
       transform: scale(1.2);
     }
      .speaker-button:active:not(:disabled) {
@@ -134,6 +135,10 @@ const CardDisplayStyles = () => (
       }
       .content-block p, .content-block span, .aspect-item span {
         font-size: 1.15em;
+      }
+      .speaker-button svg {
+        width: 36px;
+        height: 36px;
       }
     }
   `}</style>
@@ -170,17 +175,38 @@ interface TarotCardDisplayProps {
 
 const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling }) => {
   const [speakingSection, setSpeakingSection] = useState<string | null>(null);
-  const [russianVoice, setRussianVoice] = useState<SpeechSynthesisVoice | null>(null);
+  const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
 
   useEffect(() => {
     const loadVoices = () => {
       const allVoices = window.speechSynthesis.getVoices();
-      if (allVoices.length > 0) {
-        // Find a Russian male voice, fallback to any Russian voice
-        const ruMaleVoice = allVoices.find(v => v.lang === 'ru-RU' && /male|muzh|mikhail|milena/i.test(v.name));
-        const ruVoice = allVoices.find(v => v.lang === 'ru-RU');
-        setRussianVoice(ruMaleVoice || ruVoice || null);
+      if (allVoices.length === 0) return;
+
+      const maleVoiceMatcher = /male|muzh|mikhail|муж/i;
+
+      // 1. Prioritize Russian Male voice
+      const ruMaleVoice = allVoices.find(v => v.lang === 'ru-RU' && maleVoiceMatcher.test(v.name));
+      if (ruMaleVoice) {
+          setSelectedVoice(ruMaleVoice);
+          return;
       }
+
+      // 2. Any Male voice (as requested, though pronunciation might be incorrect for Russian text)
+      const anyMaleVoice = allVoices.find(v => maleVoiceMatcher.test(v.name));
+      if (anyMaleVoice) {
+          setSelectedVoice(anyMaleVoice);
+          return;
+      }
+
+      // 3. Any Russian voice as a fallback
+      const anyRuVoice = allVoices.find(v => v.lang === 'ru-RU');
+      if (anyRuVoice) {
+          setSelectedVoice(anyRuVoice);
+          return;
+      }
+      
+      // 4. Fallback to the first available voice
+      setSelectedVoice(allVoices[0] || null);
     };
 
     // Voices are loaded asynchronously
@@ -196,8 +222,8 @@ const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling }
   }, []);
 
   const handleSpeak = useCallback((text: string, sectionId: string) => {
-    if (!russianVoice) {
-      console.error('Russian voice not available or not loaded yet.');
+    if (!selectedVoice) {
+      console.error('Voice not available or not loaded yet.');
       alert('Сервис озвучивания недоступен в вашем браузере или еще не загрузился. Пожалуйста, попробуйте снова через несколько секунд.');
       return;
     }
@@ -211,8 +237,8 @@ const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling }
       }
       
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.voice = russianVoice;
-      utterance.lang = 'ru-RU';
+      utterance.voice = selectedVoice;
+      utterance.lang = selectedVoice.lang;
       
       utterance.onstart = () => {
         setSpeakingSection(sectionId);
@@ -229,7 +255,7 @@ const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling }
       
       window.speechSynthesis.speak(utterance);
     }
-  }, [russianVoice, speakingSection]);
+  }, [selectedVoice, speakingSection]);
 
   useEffect(() => {
     // Stop speech when card changes
@@ -284,10 +310,10 @@ const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling }
                 <span>Краткое значение</span>
                 <button 
                   onClick={() => handleSpeak(card.interpretation.short, 'short')} 
-                  className="speaker-button" 
+                  className={`speaker-button ${speakingSection === 'short' ? 'is-playing' : ''}`}
                   aria-label="Озвучить краткое значение"
-                  disabled={!russianVoice}
-                  title={russianVoice ? "Озвучить" : "Озвучивание загружается..."}
+                  disabled={!selectedVoice}
+                  title={selectedVoice ? "Озвучить" : "Озвучивание загружается..."}
                 >
                   <SpeakerIcon isPlaying={speakingSection === 'short'} />
                 </button>
@@ -300,10 +326,10 @@ const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling }
                 <span>Подробное толкование</span>
                 <button 
                   onClick={() => handleSpeak(card.interpretation.long, 'long')}
-                  className="speaker-button" 
+                  className={`speaker-button ${speakingSection === 'long' ? 'is-playing' : ''}`}
                   aria-label="Озвучить подробное толкование"
-                  disabled={!russianVoice}
-                  title={russianVoice ? "Озвучить" : "Озвучивание загружается..."}
+                  disabled={!selectedVoice}
+                  title={selectedVoice ? "Озвучить" : "Озвучивание загружается..."}
                 >
                   <SpeakerIcon isPlaying={speakingSection === 'long'} />
                 </button>
@@ -316,10 +342,10 @@ const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling }
                   <span>Советы Карты</span>
                   <button 
                     onClick={() => handleSpeak(adviceText, 'advice')} 
-                    className="speaker-button" 
+                    className={`speaker-button ${speakingSection === 'advice' ? 'is-playing' : ''}`}
                     aria-label="Озвучить советы карты"
-                    disabled={!russianVoice}
-                    title={russianVoice ? "Озвучить" : "Озвучивание загружается..."}
+                    disabled={!selectedVoice}
+                    title={selectedVoice ? "Озвучить" : "Озвучивание загружается..."}
                   >
                     <SpeakerIcon isPlaying={speakingSection === 'advice'} />
                   </button>
@@ -345,10 +371,10 @@ const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling }
                 <span>Аффирмация дня</span>
                 <button 
                   onClick={() => handleSpeak(card.interpretation.intent, 'intent')}
-                  className="speaker-button" 
+                  className={`speaker-button ${speakingSection === 'intent' ? 'is-playing' : ''}`}
                   aria-label="Озвучить аффирмацию"
-                  disabled={!russianVoice}
-                  title={russianVoice ? "Озвучить" : "Озвучивание загружается..."}
+                  disabled={!selectedVoice}
+                  title={selectedVoice ? "Озвучить" : "Озвучивание загружается..."}
                 >
                   <SpeakerIcon isPlaying={speakingSection === 'intent'} />
                 </button>
