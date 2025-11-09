@@ -201,6 +201,7 @@ const App: React.FC = () => {
   const [installPromptEvent, setInstallPromptEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [isShuffling, setIsShuffling] = useState(false);
   const [isCardRevealed, setIsCardRevealed] = useState(false);
+  const [isShareSupported, setIsShareSupported] = useState(false);
   const shuffleIntervalRef = useRef<number | null>(null);
 
   const touchStartX = useRef<number>(0);
@@ -235,6 +236,11 @@ const App: React.FC = () => {
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    
+    // Check for Web Share API support
+    if (navigator.share) {
+      setIsShareSupported(true);
+    }
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -253,6 +259,59 @@ const App: React.FC = () => {
     }
   };
 
+  const handleShareClick = async () => {
+    if (!navigator.share) {
+      alert('Функция "Поделиться" не поддерживается в вашем браузере.');
+      return;
+    }
+
+    const title = 'ASTRAL HERO TAROT';
+    const text = `Моя карта дня: ${selectedCard.name} (${selectedCard.keyword}). Узнай свою судьбу!`;
+    const appUrl = window.location.href;
+
+    try {
+      if (selectedCard.videoUrl) {
+        await navigator.share({
+          title,
+          text: `${text}\nСмотреть анимацию:`,
+          url: selectedCard.videoUrl,
+        });
+        return;
+      }
+
+      if (selectedCard.imageUrl) {
+        try {
+          const response = await fetch(selectedCard.imageUrl);
+          if (!response.ok) throw new Error('Image fetch failed');
+          const blob = await response.blob();
+          const file = new File([blob], `${selectedCard.name.toLowerCase().replace(/\s/g, '_')}.png`, { type: blob.type });
+
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              title,
+              text,
+              files: [file],
+            });
+            return;
+          }
+        } catch (error) {
+          console.error("Couldn't share image file, falling back to URL:", error);
+        }
+      }
+
+      await navigator.share({
+        title,
+        text,
+        url: appUrl,
+      });
+
+    } catch (error) {
+      if ((error as Error).name !== 'AbortError') {
+        console.error('Error sharing:', error);
+      }
+    }
+  };
+
 
   const handleCardSelect = useCallback((card: TarotCardData) => {
     if (isShuffling) return;
@@ -268,40 +327,32 @@ const App: React.FC = () => {
     setIsCardRevealed(false);
     const initialCardId = selectedCard.id;
 
-    // Start visual shuffling
     shuffleIntervalRef.current = window.setInterval(() => {
       const randomIndex = Math.floor(Math.random() * TAROT_DECK.length);
       setSelectedCard(TAROT_DECK[randomIndex]);
     }, 150);
 
-    // Pick final card but don't show it yet
     let finalCard: TarotCardData;
     do {
       const finalCardIndex = Math.floor(Math.random() * TAROT_DECK.length);
       finalCard = TAROT_DECK[finalCardIndex];
     } while (TAROT_DECK.length > 1 && finalCard.id === initialCardId);
 
-    // Preload media and set up min/max timers
     const minimumShuffleTime = new Promise(resolve => setTimeout(resolve, 3000));
     const maximumShuffleTime = new Promise(resolve => setTimeout(resolve, 10000));
     const preloadPromise = preloadCardMedia(finalCard);
     
     try {
-      // Wait for the minimum time first
       await minimumShuffleTime;
-      // Then, wait for either preloading to finish or the max timeout to be reached
       await Promise.race([preloadPromise, maximumShuffleTime]);
     } catch (error) {
       console.error("Media preloading failed or timed out:", error);
-      // Even if preloading fails or times out, we proceed.
     } finally {
-      // Stop visual shuffling
       if (shuffleIntervalRef.current) {
         clearInterval(shuffleIntervalRef.current);
         shuffleIntervalRef.current = null;
       }
 
-      // Set the final card and end the shuffling state
       setSelectedCard(finalCard);
       setIsShuffling(false);
       setIsCardRevealed(true);
@@ -312,7 +363,7 @@ const App: React.FC = () => {
   const handleTouchStart = (e: React.TouchEvent) => {
     if (isShuffling) return;
     touchStartX.current = e.targetTouches[0].clientX;
-    touchEndX.current = 0; // Reset endX
+    touchEndX.current = 0;
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
@@ -324,19 +375,18 @@ const App: React.FC = () => {
     if (isShuffling || !touchStartX.current || !touchEndX.current) return;
     
     const swipeDistance = touchStartX.current - touchEndX.current;
-    const swipeThreshold = 50; // Minimum distance for a swipe
+    const swipeThreshold = 50;
 
     if (Math.abs(swipeDistance) > swipeThreshold) {
       const currentIndex = TAROT_DECK.findIndex(card => card.id === selectedCard.id);
-      if (swipeDistance > 0) { // Swipe left
+      if (swipeDistance > 0) {
         const nextIndex = (currentIndex + 1) % TAROT_DECK.length;
         handleCardSelect(TAROT_DECK[nextIndex]);
-      } else { // Swipe right
+      } else {
         const nextIndex = (currentIndex - 1 + TAROT_DECK.length) % TAROT_DECK.length;
         handleCardSelect(TAROT_DECK[nextIndex]);
       }
     }
-    // Reset values
     touchStartX.current = 0;
     touchEndX.current = 0;
   };
@@ -371,6 +421,15 @@ const App: React.FC = () => {
               >
                 Что скажет Карта?
               </button>
+              {isShareSupported && (
+                <button 
+                  onClick={handleShareClick}
+                  disabled={isShuffling}
+                  className="header-button"
+                >
+                  Поделиться
+                </button>
+              )}
               <button 
                 onClick={handleInstallClick}
                 disabled={isShuffling}
