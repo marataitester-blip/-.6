@@ -7,7 +7,6 @@ const URLS_TO_CACHE = [
   '/index.html',
   // TS/TSX files removed from precache, they will be cached at runtime
   'https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Cormorant+Garamond:wght@400;500;600&display=swap',
-  'https://code.responsivevoice.org/responsivevoice.js?key=YOUR_KEY',
   `${CDN_BASE_URL}keyword_reveal.mp3`,
   `${CDN_BASE_URL}00_fool_anim.mp4`,
   `${CDN_BASE_URL}01_magician_anim.mp4`,

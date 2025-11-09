@@ -1,18 +1,6 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import type { TarotCardData } from '../types';
 
-declare global {
-  interface Window {
-    responsiveVoice: {
-      speak: (text: string, voice: string, options?: object) => void;
-      cancel: () => void;
-      isPlaying: () => boolean;
-      getVoices: () => any[];
-    };
-  }
-}
-
-// Fix: Complete the component styles that were cut off.
 const CardDisplayStyles = () => (
   <style>{`
     .card-display-container {
@@ -116,10 +104,14 @@ const CardDisplayStyles = () => (
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      transition: color 0.2s ease;
+      transition: color 0.2s ease, transform 0.2s ease;
     }
     .speaker-button:hover:not(:disabled) {
       color: var(--accent);
+      transform: scale(1.2);
+    }
+     .speaker-button:active:not(:disabled) {
+      transform: scale(1.1);
     }
     .speaker-button:disabled {
       cursor: not-allowed;
@@ -178,48 +170,72 @@ interface TarotCardDisplayProps {
 
 const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling }) => {
   const [speakingSection, setSpeakingSection] = useState<string | null>(null);
-  const [isResponsiveVoiceReady, setIsResponsiveVoiceReady] = useState(false);
-  
+  const [russianVoice, setRussianVoice] = useState<SpeechSynthesisVoice | null>(null);
+
   useEffect(() => {
-    const checkVoiceReady = () => {
-      if (typeof window.responsiveVoice !== 'undefined' && window.responsiveVoice.getVoices().length > 0) {
-        setIsResponsiveVoiceReady(true);
-      } else {
-        setTimeout(checkVoiceReady, 100);
+    const loadVoices = () => {
+      const allVoices = window.speechSynthesis.getVoices();
+      if (allVoices.length > 0) {
+        // Find a Russian male voice, fallback to any Russian voice
+        const ruMaleVoice = allVoices.find(v => v.lang === 'ru-RU' && /male|muzh|mikhail|milena/i.test(v.name));
+        const ruVoice = allVoices.find(v => v.lang === 'ru-RU');
+        setRussianVoice(ruMaleVoice || ruVoice || null);
       }
     };
-    if (typeof window.responsiveVoice !== 'undefined') {
-      checkVoiceReady();
-    }
+
+    // Voices are loaded asynchronously
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+
+    return () => {
+      window.speechSynthesis.onvoiceschanged = null;
+      if (window.speechSynthesis.speaking) {
+        window.speechSynthesis.cancel();
+      }
+    };
   }, []);
 
   const handleSpeak = useCallback((text: string, sectionId: string) => {
-    if (!isResponsiveVoiceReady) {
-      console.error('ResponsiveVoice not ready');
-      alert('Сервис озвучивания еще не готов. Пожалуйста, подождите несколько секунд и попробуйте снова.');
+    if (!russianVoice) {
+      console.error('Russian voice not available or not loaded yet.');
+      alert('Сервис озвучивания недоступен в вашем браузере или еще не загрузился. Пожалуйста, попробуйте снова через несколько секунд.');
       return;
     }
 
     if (speakingSection === sectionId) {
-      window.responsiveVoice.cancel();
+      window.speechSynthesis.cancel();
       setSpeakingSection(null);
     } else {
-      if (window.responsiveVoice.isPlaying()) {
-        window.responsiveVoice.cancel();
+      if (window.speechSynthesis.speaking) {
+        window.speechSynthesis.cancel();
       }
-      window.responsiveVoice.speak(text, 'Russian Male', {
-        onstart: () => setSpeakingSection(sectionId),
-        onend: () => setSpeakingSection(null),
-        onerror: () => setSpeakingSection(null),
-      });
+      
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.voice = russianVoice;
+      utterance.lang = 'ru-RU';
+      
+      utterance.onstart = () => {
+        setSpeakingSection(sectionId);
+      };
+      
+      utterance.onend = () => {
+        setSpeakingSection(null);
+      };
+      
+      utterance.onerror = (e) => {
+        setSpeakingSection(null);
+        console.error('Speech synthesis error:', e);
+      };
+      
+      window.speechSynthesis.speak(utterance);
     }
-  }, [isResponsiveVoiceReady, speakingSection]);
+  }, [russianVoice, speakingSection]);
 
   useEffect(() => {
     // Stop speech when card changes
     return () => {
-      if (typeof window.responsiveVoice !== 'undefined' && window.responsiveVoice.isPlaying()) {
-        window.responsiveVoice.cancel();
+      if (window.speechSynthesis.speaking) {
+        window.speechSynthesis.cancel();
         setSpeakingSection(null);
       }
     };
@@ -270,8 +286,8 @@ const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling }
                   onClick={() => handleSpeak(card.interpretation.short, 'short')} 
                   className="speaker-button" 
                   aria-label="Озвучить краткое значение"
-                  disabled={!isResponsiveVoiceReady}
-                  title={isResponsiveVoiceReady ? "Озвучить" : "Озвучивание загружается..."}
+                  disabled={!russianVoice}
+                  title={russianVoice ? "Озвучить" : "Озвучивание загружается..."}
                 >
                   <SpeakerIcon isPlaying={speakingSection === 'short'} />
                 </button>
@@ -286,8 +302,8 @@ const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling }
                   onClick={() => handleSpeak(card.interpretation.long, 'long')}
                   className="speaker-button" 
                   aria-label="Озвучить подробное толкование"
-                  disabled={!isResponsiveVoiceReady}
-                  title={isResponsiveVoiceReady ? "Озвучить" : "Озвучивание загружается..."}
+                  disabled={!russianVoice}
+                  title={russianVoice ? "Озвучить" : "Озвучивание загружается..."}
                 >
                   <SpeakerIcon isPlaying={speakingSection === 'long'} />
                 </button>
@@ -302,8 +318,8 @@ const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling }
                     onClick={() => handleSpeak(adviceText, 'advice')} 
                     className="speaker-button" 
                     aria-label="Озвучить советы карты"
-                    disabled={!isResponsiveVoiceReady}
-                    title={isResponsiveVoiceReady ? "Озвучить" : "Озвучивание загружается..."}
+                    disabled={!russianVoice}
+                    title={russianVoice ? "Озвучить" : "Озвучивание загружается..."}
                   >
                     <SpeakerIcon isPlaying={speakingSection === 'advice'} />
                   </button>
@@ -331,8 +347,8 @@ const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling }
                   onClick={() => handleSpeak(card.interpretation.intent, 'intent')}
                   className="speaker-button" 
                   aria-label="Озвучить аффирмацию"
-                  disabled={!isResponsiveVoiceReady}
-                  title={isResponsiveVoiceReady ? "Озвучить" : "Озвучивание загружается..."}
+                  disabled={!russianVoice}
+                  title={russianVoice ? "Озвучить" : "Озвучивание загружается..."}
                 >
                   <SpeakerIcon isPlaying={speakingSection === 'intent'} />
                 </button>
