@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import type { TarotCardData } from '../types';
 
 declare global {
@@ -7,10 +7,12 @@ declare global {
       speak: (text: string, voice: string, options?: object) => void;
       cancel: () => void;
       isPlaying: () => boolean;
+      getVoices: () => any[];
     };
   }
 }
 
+// Fix: Complete the component styles that were cut off.
 const CardDisplayStyles = () => (
   <style>{`
     .card-display-container {
@@ -69,213 +71,233 @@ const CardDisplayStyles = () => (
       border-left: 3px solid var(--accent); 
       border-radius: 0 8px 8px 0;
     }
+    .content-block:first-child {
+      margin-top: 0;
+    }
     .content-block h4 {
       display: flex;
       align-items: center;
       font-family: "Cinzel", serif;
       color: var(--accent);
       font-size: 1.2em;
+      margin-top: 0;
       margin-bottom: 8px;
     }
     .content-block p, .content-block span {
       color: var(--fg);
+      margin: 0;
     }
     .aspects { 
       display: grid; 
       grid-template-columns: 1fr; 
-      gap: 12px; 
-      margin-top: 10px;
+      gap: 12px;
     }
-    .aspect { 
-      background: rgba(255, 255, 255, 0.02); 
-      border: 1px solid rgba(199, 168, 123, 0.2); 
-      border-radius: 8px; 
-      padding: 12px;
+    .aspect-item {
       display: flex;
       align-items: flex-start;
       gap: 8px;
     }
-    .aspect strong { 
+    .aspect-item strong {
       color: var(--accent);
+      font-weight: 600;
       flex-shrink: 0;
-      padding-top: 2px;
     }
-    .speak-button {
-      margin-left: auto;
-      padding: 4px 12px;
-      font-size: 0.8em;
-      border-radius: 12px;
-      border: 1px solid var(--accent);
+    .speaker-button {
       background: transparent;
-      color: var(--accent);
+      border: none;
+      color: var(--muted);
       cursor: pointer;
-      transition: all 0.3s;
-      font-family: "Cinzel", serif;
-      flex-shrink: 0;
+      margin-left: 8px;
+      padding: 4px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.2s ease;
     }
-    .speak-button:hover {
-      background: var(--accent);
-      color: var(--bg);
+    .speaker-button:hover:not(:disabled) {
+      color: var(--accent);
     }
-    .speak-button.speaking {
-      background: #c77b7b;
-      color: var(--bg);
-      border-color: #c77b7b;
+    .speaker-button:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+    .speaker-button svg {
+      width: 20px;
+      height: 20px;
     }
   `}</style>
 );
 
+const SpeakerIcon = ({ isPlaying }: { isPlaying: boolean }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    aria-hidden="true"
+  >
+    {isPlaying ? (
+      <path
+        fillRule="evenodd"
+        d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zM9 8.25a.75.75 0 00-1.5 0v7.5a.75.75 0 001.5 0V8.25zm6 0a.75.75 0 00-1.5 0v7.5a.75.75 0 001.5 0V8.25z"
+        clipRule="evenodd"
+      />
+    ) : (
+      <path
+        fillRule="evenodd"
+        d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm14.024-.983a1.125 1.125 0 010 1.966l-5.603 3.113A1.125 1.125 0 019 15.113V8.887c0-.857.921-1.4 1.671-.983l5.603 3.113z"
+        clipRule="evenodd"
+      />
+    )}
+  </svg>
+);
 
-const SpeakButton: React.FC<{ text: string }> = ({ text }) => {
-  const [isSpeaking, setIsSpeaking] = useState(false);
-
-  useEffect(() => {
-    return () => {
-      if (window.responsiveVoice && window.responsiveVoice.isPlaying()) {
-        window.responsiveVoice.cancel();
-      }
-    };
-  }, [text]);
-
-  const handleSpeak = useCallback(() => {
-    if (!window.responsiveVoice) {
-      console.error('ResponsiveVoice not loaded.');
-      alert('Функция озвучивания не доступна.');
-      return;
-    }
-
-    if (window.responsiveVoice.isPlaying()) {
-      window.responsiveVoice.cancel();
-      setIsSpeaking(false);
-    } else {
-      window.responsiveVoice.speak(text, 'Russian Female', {
-        onstart: () => setIsSpeaking(true),
-        onend: () => setIsSpeaking(false),
-        onerror: () => setIsSpeaking(false)
-      });
-    }
-  }, [text]);
-
-
-  return (
-    <button
-      onClick={handleSpeak}
-      className={`speak-button ${isSpeaking ? 'speaking' : ''}`}
-    >
-      {isSpeaking ? 'Стоп' : 'Озвучить'}
-    </button>
-  );
-};
 
 interface TarotCardDisplayProps {
   card: TarotCardData;
-  isShuffling?: boolean;
+  isShuffling: boolean;
 }
 
-const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling = false }) => {
-  const cardKey = useMemo(() => card.id, [card]);
-  const { interpretation } = card;
-  const isInitialRender = useRef(true);
-  const soundEffect = useMemo(() => new Audio('https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/keyword_reveal.mp3'), []);
-
+// Fix: Define and export the TarotCardDisplay component.
+const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling }) => {
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isResponsiveVoiceReady, setIsResponsiveVoiceReady] = useState(false);
+  
   useEffect(() => {
-      if (window.responsiveVoice && window.responsiveVoice.isPlaying()) {
-          window.responsiveVoice.cancel();
-      }
-  }, [card]);
-
-  useEffect(() => {
-    if (isInitialRender.current) {
-      isInitialRender.current = false;
-      return;
-    }
-    if (!isShuffling) {
-      soundEffect.currentTime = 0;
-      soundEffect.play().catch(error => console.error("Error playing sound effect:", error));
-    }
-    return () => {
-      if (!soundEffect.paused) {
-        soundEffect.pause();
+    const checkVoiceReady = () => {
+      if (typeof window.responsiveVoice !== 'undefined' && window.responsiveVoice.getVoices().length > 0) {
+        setIsResponsiveVoiceReady(true);
+      } else {
+        setTimeout(checkVoiceReady, 100);
       }
     };
-  }, [card.id, isShuffling, soundEffect]);
+    if (typeof window.responsiveVoice !== 'undefined') {
+      checkVoiceReady();
+    }
+  }, []);
+
+  const textToSpeak = useMemo(() => {
+    if (!card) return '';
+    return [
+      card.name,
+      card.keyword,
+      card.interpretation.short,
+      card.interpretation.long,
+      `Совет для отношений. ${card.interpretation.advice.relationships}`,
+      `Совет для здоровья. ${card.interpretation.advice.health}`,
+      `Совет для денег. ${card.interpretation.advice.money}`,
+      `Аффирмация. ${card.interpretation.intent}`,
+    ].join('. ');
+  }, [card]);
+
+  const toggleSpeech = useCallback(() => {
+    if (!isResponsiveVoiceReady) {
+      console.error('ResponsiveVoice not ready');
+      alert('Сервис озвучивания еще не готов. Пожалуйста, подождите несколько секунд и попробуйте снова.');
+      return;
+    }
+    if (isSpeaking) {
+      window.responsiveVoice.cancel();
+      setIsSpeaking(false);
+    } else {
+      window.responsiveVoice.speak(textToSpeak, 'Russian Female', {
+        onstart: () => setIsSpeaking(true),
+        onend: () => setIsSpeaking(false),
+        onerror: () => setIsSpeaking(false),
+      });
+    }
+  }, [isSpeaking, textToSpeak, isResponsiveVoiceReady]);
+
+  useEffect(() => {
+    // Stop speech when card changes
+    return () => {
+      if (typeof window.responsiveVoice !== 'undefined' && window.responsiveVoice.isPlaying()) {
+        window.responsiveVoice.cancel();
+        setIsSpeaking(false);
+      }
+    };
+  }, [card]);
+
+  const cardMedia = useMemo(() => {
+    if (card.videoUrl) {
+      return (
+        <video
+          key={card.id}
+          src={card.videoUrl}
+          autoPlay
+          loop
+          muted
+          playsInline
+          poster={card.imageUrl} // Fallback image for video
+        />
+      );
+    }
+    if (card.imageUrl) {
+      return <img key={card.id} src={card.imageUrl} alt={card.name} />;
+    }
+    return null;
+  }, [card]);
 
   return (
-    <div key={cardKey} className={`card-display-container ${isShuffling ? 'is-shuffling' : ''} interpretation-grid`}>
+    <>
       <CardDisplayStyles />
-      <div>
-        <div className="card-video-container">
-          {card.videoUrl ? (
-            <video 
-              key={card.videoUrl} 
-              autoPlay 
-              loop 
-              muted 
-              playsInline
-            >
-              <source src={card.videoUrl} type="video/mp4" />
-              Your browser does not support the video tag.
-            </video>
-          ) : card.imageUrl ? (
-            <img 
-              key={card.imageUrl}
-              src={card.imageUrl} 
-              alt={card.name} 
-            />
-          ) : (
+      <div className={`card-display-container ${isShuffling ? 'is-shuffling' : ''}`}>
+        <div className="interpretation-grid">
+          <div className="card-media-column">
             <div className="card-video-container">
-               <img src="https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/rubashka.png" alt="Card Back" />
+              {cardMedia}
             </div>
-          )}
-        </div>
-        <h2 className="card-title">{card.name}</h2>
-        <p className="card-keyword">{card.keyword}</p>
-      </div>
-      
-      <div>
-        <div className="content-block">
-          <h4>
-            Кратко
-            <SpeakButton text={interpretation.short} />
-          </h4>
-          <p>{interpretation.short}</p>
-        </div>
-        <div className="content-block">
-          <h4>
-            Развернуто
-            <SpeakButton text={interpretation.long} />
-          </h4>
-          <p>{interpretation.long}</p>
-        </div>
-        <div className="content-block">
-          <h4>Практические векторы</h4>
-          <div className="aspects">
-            <div className="aspect">
-              <strong>Отношения:</strong>
-              <span>{interpretation.advice.relationships}</span>
-              <SpeakButton text={`Отношения: ${interpretation.advice.relationships}`} />
+            <h2 className="card-title">{card.id}. {card.name}</h2>
+            <p className="card-keyword">{card.keyword}</p>
+          </div>
+
+          <div className="card-text-column">
+            <div className="content-block">
+              <h4>
+                Краткое значение
+                <button 
+                  onClick={toggleSpeech} 
+                  className="speaker-button" 
+                  aria-label="Озвучить текст"
+                  disabled={!isResponsiveVoiceReady}
+                  title={isResponsiveVoiceReady ? "Озвучить текст" : "Озвучивание загружается..."}
+                >
+                  <SpeakerIcon isPlaying={isSpeaking} />
+                </button>
+              </h4>
+              <p>{card.interpretation.short}</p>
             </div>
-            <div className="aspect">
-              <strong>Здоровье:</strong>
-              <span>{interpretation.advice.health}</span>
-              <SpeakButton text={`Здоровье: ${interpretation.advice.health}`} />
+
+            <div className="content-block">
+              <h4>Подробное толкование</h4>
+              <p>{card.interpretation.long}</p>
             </div>
-            <div className="aspect">
-              <strong>Деньги:</strong>
-              <span>{interpretation.advice.money}</span>
-              <SpeakButton text={`Деньги: ${interpretation.advice.money}`} />
+            
+            <div className="content-block">
+                <h4>Советы Карты</h4>
+                <div className="aspects">
+                    <div className="aspect-item">
+                        <strong>Отношения:</strong>
+                        <span>{card.interpretation.advice.relationships}</span>
+                    </div>
+                    <div className="aspect-item">
+                        <strong>Здоровье:</strong>
+                        <span>{card.interpretation.advice.health}</span>
+                    </div>
+                    <div className="aspect-item">
+                        <strong>Деньги:</strong>
+                        <span>{card.interpretation.advice.money}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div className="content-block">
+              <h4>Аффирмация дня</h4>
+              <p><em>{card.interpretation.intent}</em></p>
             </div>
           </div>
         </div>
-        <div className="content-block">
-          <h4>
-            Совет дня
-            <SpeakButton text={interpretation.intent} />
-          </h4>
-          <p><em>{interpretation.intent}</em></p>
-        </div>
       </div>
-    </div>
+    </>
   );
 };
 

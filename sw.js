@@ -1,4 +1,4 @@
-const CACHE_NAME = 'astral-hero-tarot-v3';
+const CACHE_NAME = 'astral-hero-tarot-v4';
 const CDN_BASE_URL = 'https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/';
 
 // Список всех ресурсов для кэширования
@@ -31,6 +31,8 @@ const URLS_TO_CACHE = [
   `${CDN_BASE_URL}19_sun_anim.mp4`,
   `${CDN_BASE_URL}20_judgement_anim.mp4`,
   `${CDN_BASE_URL}21_world_anim.mp4`,
+  `${CDN_BASE_URL}22_hero_anim.mp4`,
+  `${CDN_BASE_URL}23_white_card_anim.mp4`,
   `${CDN_BASE_URL}wands_01_ace.png`,
   `${CDN_BASE_URL}wands_02_two.png`,
   `${CDN_BASE_URL}wands_03_three.png`,
@@ -86,7 +88,7 @@ const URLS_TO_CACHE = [
   `${CDN_BASE_URL}pentacles_11_page.png`,
   `${CDN_BASE_URL}pentacles_12_knight.png`,
   `${CDN_BASE_URL}pentacles_13_queen.png`,
-  `${CDN_BASE_URL}pentacles_14_king.png`,
+  `${CDN_BASE_URL}pentacles_14_king_anim.mp4`,
   `${CDN_BASE_URL}icon-192x192.png`,
   `${CDN_BASE_URL}icon-512x512.png`,
   `${CDN_BASE_URL}rubashka.png`
@@ -101,9 +103,8 @@ self.addEventListener('install', event => {
         // Используем более надежный способ кэширования, чтобы одна ошибка не сломала все
         return Promise.all(
           URLS_TO_CACHE.map(url => {
-            // Для кросс-доменных запросов создаем новый объект Request
-            const request = (url.startsWith('http')) ? new Request(url, { mode: 'no-cors' }) : url;
-            return cache.add(request).catch(err => {
+            // cache.add handles cross-origin requests with CORS by default
+            return cache.add(url).catch(err => {
               console.warn(`Failed to cache ${url}:`, err);
             });
           })

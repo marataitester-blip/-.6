@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { TAROT_DECK } from './constants';
 import type { TarotCardData } from './types';
 import CardSelector from './components/CardSelector';
@@ -205,6 +205,14 @@ const App: React.FC = () => {
 
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
+  
+  const soundEffect = useMemo(() => new Audio('https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/keyword_reveal.mp3'), []);
+
+  const playSound = useCallback(() => {
+    soundEffect.currentTime = 0;
+    soundEffect.play().catch(error => console.error("Error playing sound effect:", error));
+  }, [soundEffect]);
+
 
   useEffect(() => {
     // Service Worker registration for PWA caching
@@ -250,7 +258,8 @@ const App: React.FC = () => {
     if (isShuffling) return;
     setSelectedCard(card);
     setIsCardRevealed(false);
-  }, [isShuffling]);
+    playSound();
+  }, [isShuffling, playSound]);
   
   const handleRandomCardSelect = useCallback(async () => {
     if (isShuffling) return;
@@ -296,8 +305,9 @@ const App: React.FC = () => {
       setSelectedCard(finalCard);
       setIsShuffling(false);
       setIsCardRevealed(true);
+      playSound();
     }
-  }, [isShuffling, selectedCard.id]);
+  }, [isShuffling, selectedCard.id, playSound]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (isShuffling) return;
