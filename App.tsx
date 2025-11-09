@@ -136,10 +136,12 @@ const GlobalStyles = () => (
       .header-buttons {
         gap: 8px;
         margin-top: 8px;
+        flex-wrap: nowrap;
       }
       .header-button {
-        padding: 5px 14px;
-        font-size: 0.8em;
+        padding: 5px 10px;
+        font-size: 0.75em;
+        white-space: nowrap;
       }
       .card-display-wrapper {
         margin-top: 16px;
@@ -227,14 +229,19 @@ const App: React.FC = () => {
       finalCard = TAROT_DECK[finalCardIndex];
     } while (TAROT_DECK.length > 1 && finalCard.id === initialCardId);
 
-    // Preload media and ensure a minimum shuffle time
+    // Preload media and set up min/max timers
     const minimumShuffleTime = new Promise(resolve => setTimeout(resolve, 3000));
+    const maximumShuffleTime = new Promise(resolve => setTimeout(resolve, 5000));
+    const preloadPromise = preloadCardMedia(finalCard);
     
     try {
-      await Promise.all([preloadCardMedia(finalCard), minimumShuffleTime]);
+      // Wait for the minimum time first
+      await minimumShuffleTime;
+      // Then, wait for either preloading to finish or the max timeout to be reached
+      await Promise.race([preloadPromise, maximumShuffleTime]);
     } catch (error) {
-      console.error("Media preloading failed:", error);
-      // Even if preloading fails, we proceed to show the card.
+      console.error("Media preloading failed or timed out:", error);
+      // Even if preloading fails or times out, we proceed.
     } finally {
       // Stop visual shuffling
       if (shuffleIntervalRef.current) {
