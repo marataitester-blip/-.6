@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import type { TarotCardData } from '../types';
 
 interface CardSelectorProps {
   cards: TarotCardData[];
   selectedCard: TarotCardData;
   onSelect: (card: TarotCardData) => void;
+  isShuffling: boolean;
 }
 
 const CardSelectorStyles = () => (
@@ -16,6 +17,12 @@ const CardSelectorStyles = () => (
       gap: 10px;
       scrollbar-width: thin;
       scrollbar-color: var(--accent) var(--card-bg);
+      -ms-overflow-style: none; /* IE and Edge */
+      -webkit-overflow-scrolling: touch; /* Momentum scrolling for iOS */
+    }
+    .card-selector.shuffling {
+      pointer-events: none;
+      opacity: 0.7;
     }
     .card-selector::-webkit-scrollbar {
       height: 8px;
@@ -54,14 +61,28 @@ const CardSelectorStyles = () => (
   `}</style>
 );
 
-const CardSelector: React.FC<CardSelectorProps> = ({ cards, selectedCard, onSelect }) => {
+const CardSelector: React.FC<CardSelectorProps> = ({ cards, selectedCard, onSelect, isShuffling }) => {
+  const buttonRefs = useRef<Map<number, HTMLButtonElement | null>>(new Map());
+
+  useEffect(() => {
+    const button = buttonRefs.current.get(selectedCard.id);
+    if (button) {
+      button.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'center',
+      });
+    }
+  }, [selectedCard]);
+
   return (
     <>
       <CardSelectorStyles />
-      <div className="card-selector">
+      <div className={`card-selector ${isShuffling ? 'shuffling' : ''}`}>
         {cards.map((card) => (
           <button
             key={card.id}
+            ref={(el) => buttonRefs.current.set(card.id, el)}
             onClick={() => onSelect(card)}
             className={`card-selector-button ${selectedCard.id === card.id ? 'active' : ''}`}
           >
