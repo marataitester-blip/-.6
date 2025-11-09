@@ -136,9 +136,12 @@ const CardDisplayStyles = () => (
       .content-block p, .content-block span, .aspect-item span {
         font-size: 1.15em;
       }
+      .speaker-button {
+        color: #ffd700; /* Make golden on mobile */
+      }
       .speaker-button svg {
-        width: 36px;
-        height: 36px;
+        width: 40px; /* Increased size */
+        height: 40px;
       }
     }
   `}</style>
@@ -182,31 +185,30 @@ const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling }
       const allVoices = window.speechSynthesis.getVoices();
       if (allVoices.length === 0) return;
 
-      const maleVoiceMatcher = /male|muzh|mikhail|муж/i;
+      const maleVoiceMatcher = /male|muzh|mikhail|муж|yuri/i;
+      const russianLangMatcher = /^ru(-RU)?$/i;
+
+      let finalVoice: SpeechSynthesisVoice | undefined;
 
       // 1. Prioritize Russian Male voice
-      const ruMaleVoice = allVoices.find(v => v.lang === 'ru-RU' && maleVoiceMatcher.test(v.name));
-      if (ruMaleVoice) {
-          setSelectedVoice(ruMaleVoice);
-          return;
-      }
+      finalVoice = allVoices.find(v => russianLangMatcher.test(v.lang) && maleVoiceMatcher.test(v.name));
 
-      // 2. Any Male voice (as requested, though pronunciation might be incorrect for Russian text)
-      const anyMaleVoice = allVoices.find(v => maleVoiceMatcher.test(v.name));
-      if (anyMaleVoice) {
-          setSelectedVoice(anyMaleVoice);
-          return;
+      // 2. Any Russian voice as a fallback
+      if (!finalVoice) {
+        finalVoice = allVoices.find(v => russianLangMatcher.test(v.lang));
       }
-
-      // 3. Any Russian voice as a fallback
-      const anyRuVoice = allVoices.find(v => v.lang === 'ru-RU');
-      if (anyRuVoice) {
-          setSelectedVoice(anyRuVoice);
-          return;
+      
+      // 3. Any Male voice as a second fallback (for timbre, but might mispronounce)
+      if (!finalVoice) {
+        finalVoice = allVoices.find(v => maleVoiceMatcher.test(v.name));
       }
       
       // 4. Fallback to the first available voice
-      setSelectedVoice(allVoices[0] || null);
+      if (!finalVoice) {
+        finalVoice = allVoices[0];
+      }
+
+      setSelectedVoice(finalVoice || null);
     };
 
     // Voices are loaded asynchronously
@@ -238,7 +240,7 @@ const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling }
       
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.voice = selectedVoice;
-      utterance.lang = selectedVoice.lang;
+      utterance.lang = 'ru-RU'; // Force Russian language for the utterance
       
       utterance.onstart = () => {
         setSpeakingSection(sectionId);
