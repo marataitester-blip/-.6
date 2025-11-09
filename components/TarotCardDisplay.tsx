@@ -59,9 +59,12 @@ const CardDisplayStyles = () => (
     }
     @media (min-width: 1024px) {
       .interpretation-grid {
-        grid-template-columns: 420px 1fr;
+        grid-template-columns: 360px 1fr;
         gap: 32px;
         align-items: flex-start;
+      }
+      .card-video-container video, .card-video-container img {
+          max-width: 340px;
       }
     }
     .content-block { 
@@ -123,8 +126,8 @@ const CardDisplayStyles = () => (
       opacity: 0.5;
     }
     .speaker-button svg {
-      width: 20px;
-      height: 20px;
+      width: 24px;
+      height: 24px;
     }
 
     @media (max-width: 767px) {
