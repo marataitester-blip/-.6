@@ -23,12 +23,20 @@ const GlobalStyles = () => (
       --accent: #c7a87b; 
       --card-bg: #16161d; 
     }
+    html, body, #root {
+      height: 100%;
+    }
     body {
       background-color: var(--bg);
       color: var(--fg);
       font-family: "Cormorant Garamond", "Georgia", serif;
       line-height: 1.5;
       margin: 0;
+    }
+    main {
+      display: flex;
+      flex-direction: column;
+      transition: min-height 0.5s ease;
     }
     .oracle-single { 
       padding: 14px; 
@@ -107,12 +115,31 @@ const GlobalStyles = () => (
     
     .card-display-wrapper {
       margin-top: 24px;
-      transition: filter 0.4s ease-out, transform 0.4s ease-out;
+      transition: filter 0.4s ease-out, transform 0.4s ease-out, flex-grow 0.5s ease;
     }
     .card-display-wrapper.shuffling-active {
       filter: blur(4px) brightness(0.8);
       transform: scale(0.96);
     }
+    
+    /* Revealed state for centered card */
+    .card-revealed main {
+      min-height: calc(100vh - 28px);
+      min-height: calc(100dvh - 28px);
+    }
+    .card-revealed .card-display-wrapper {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+     @media (min-width: 768px) {
+      .card-revealed main {
+        min-height: calc(100vh - 36px);
+        min-height: calc(100dvh - 36px);
+      }
+    }
+
 
     .app-footer {
       text-align: center;
@@ -174,6 +201,7 @@ const App: React.FC = () => {
   const [selectedCard, setSelectedCard] = useState<TarotCardData>(TAROT_DECK[0]);
   const [installPromptEvent, setInstallPromptEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [isShuffling, setIsShuffling] = useState(false);
+  const [isCardRevealed, setIsCardRevealed] = useState(false);
   const shuffleIntervalRef = useRef<number | null>(null);
 
   const touchStartX = useRef<number>(0);
@@ -208,12 +236,14 @@ const App: React.FC = () => {
   const handleCardSelect = useCallback((card: TarotCardData) => {
     if (isShuffling) return;
     setSelectedCard(card);
+    setIsCardRevealed(false);
   }, [isShuffling]);
   
   const handleRandomCardSelect = useCallback(async () => {
     if (isShuffling) return;
 
     setIsShuffling(true);
+    setIsCardRevealed(false);
     const initialCardId = selectedCard.id;
 
     // Start visual shuffling
@@ -252,6 +282,7 @@ const App: React.FC = () => {
       // Set the final card and end the shuffling state
       setSelectedCard(finalCard);
       setIsShuffling(false);
+      setIsCardRevealed(true);
     }
   }, [isShuffling, selectedCard.id]);
 
@@ -291,7 +322,7 @@ const App: React.FC = () => {
   return (
     <>
       <GlobalStyles />
-      <div className="oracle-single"
+      <div className={`oracle-single ${isCardRevealed ? 'card-revealed' : ''}`}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
