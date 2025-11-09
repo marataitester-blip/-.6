@@ -1,0 +1,23 @@
+{
+  "short_name": "Astral Tarot",
+  "name": "ASTRAL HERO TAROT",
+  "description": "Ваш персональный оракул для связи с космосом. Получите мудрость арканов через анимированные карты и голосовые толкования.",
+  "icons": [
+    {
+      "src": "https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/icon-192x192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/icon-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#0f0f14",
+  "background_color": "#0f0f14"
+}
