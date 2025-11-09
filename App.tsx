@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { TAROT_DECK } from './constants';
 import type { TarotCardData } from './types';
@@ -91,25 +90,25 @@ const GlobalStyles = () => (
     .header-button.pulsate {
       border-color: gold;
       color: gold;
-      animation: pulsate 2s infinite;
+      animation: expressive-pulse 2s infinite;
     }
     .header-button.pulsate:hover:not(:disabled) {
         background: gold;
         color: var(--bg);
     }
 
-    @keyframes pulsate {
+    @keyframes expressive-pulse {
       0% {
         transform: scale(1);
-        box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7);
+        box-shadow: 0 0 5px rgba(255, 215, 0, 0.3), 0 0 10px rgba(255, 215, 0, 0.2);
       }
-      70% {
+      50% {
         transform: scale(1.05);
-        box-shadow: 0 0 10px 15px rgba(255, 215, 0, 0);
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.7), 0 0 30px rgba(255, 215, 0, 0.5);
       }
       100% {
         transform: scale(1);
-        box-shadow: 0 0 0 0 rgba(255, 215, 0, 0);
+        box-shadow: 0 0 5px rgba(255, 215, 0, 0.3), 0 0 10px rgba(255, 215, 0, 0.2);
       }
     }
     
@@ -275,7 +274,7 @@ const App: React.FC = () => {
 
     // Preload media and set up min/max timers
     const minimumShuffleTime = new Promise(resolve => setTimeout(resolve, 3000));
-    const maximumShuffleTime = new Promise(resolve => setTimeout(resolve, 5000));
+    const maximumShuffleTime = new Promise(resolve => setTimeout(resolve, 10000));
     const preloadPromise = preloadCardMedia(finalCard);
     
     try {
@@ -360,7 +359,7 @@ const App: React.FC = () => {
                 disabled={isShuffling}
                 className="header-button pulsate"
               >
-                Карта говорит
+                Что скажет Карта?
               </button>
               <button 
                 onClick={handleInstallClick}

@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import type { TarotCardData } from '../types';
 
 declare global {
@@ -175,12 +175,30 @@ interface TarotCardDisplayProps {
 const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling = false }) => {
   const cardKey = useMemo(() => card.id, [card]);
   const { interpretation } = card;
+  const isInitialRender = useRef(true);
+  const soundEffect = useMemo(() => new Audio('https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/keyword_reveal.mp3'), []);
 
   useEffect(() => {
       if (window.responsiveVoice && window.responsiveVoice.isPlaying()) {
           window.responsiveVoice.cancel();
       }
   }, [card]);
+
+  useEffect(() => {
+    if (isInitialRender.current) {
+      isInitialRender.current = false;
+      return;
+    }
+    if (!isShuffling) {
+      soundEffect.currentTime = 0;
+      soundEffect.play().catch(error => console.error("Error playing sound effect:", error));
+    }
+    return () => {
+      if (!soundEffect.paused) {
+        soundEffect.pause();
+      }
+    };
+  }, [card.id, isShuffling, soundEffect]);
 
   return (
     <div key={cardKey} className={`card-display-container ${isShuffling ? 'is-shuffling' : ''} interpretation-grid`}>
