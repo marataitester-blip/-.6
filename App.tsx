@@ -41,7 +41,7 @@ const GlobalStyles = () => (
     
     .app-header {
       text-align: center;
-      margin: 24px 0;
+      margin: 16px 0;
     }
     .app-title {
       font-size: 2.2em;
@@ -51,24 +51,24 @@ const GlobalStyles = () => (
       letter-spacing: 2px;
     }
     .header-buttons {
-      margin-top: 16px;
+      margin-top: 12px;
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
-      gap: 16px;
+      gap: 12px;
       align-items: center;
     }
     .header-button {
       background: transparent;
       color: var(--accent);
-      padding: 8px 20px;
-      border-radius: 24px;
+      padding: 6px 16px;
+      border-radius: 20px;
       text-decoration: none;
       font-family: "Cinzel", serif;
       border: 1px solid var(--accent);
       cursor: pointer;
       transition: all 0.3s ease;
-      font-size: 0.9em;
+      font-size: 0.85em;
     }
     .header-button:hover:not(:disabled) {
       background: var(--accent);
@@ -106,7 +106,7 @@ const GlobalStyles = () => (
     }
     
     .card-display-wrapper {
-      margin-top: 32px;
+      margin-top: 24px;
       transition: filter 0.4s ease-out, transform 0.4s ease-out;
     }
     .card-display-wrapper.shuffling-active {
@@ -123,6 +123,27 @@ const GlobalStyles = () => (
     .app-footer p {
       color: var(--muted);
       font-size: 0.9em;
+    }
+    
+    @media (max-width: 767px) {
+      .app-header {
+        margin: 8px 0;
+      }
+      .app-title {
+        font-size: 1.6em;
+        letter-spacing: 1.5px;
+      }
+      .header-buttons {
+        gap: 8px;
+        margin-top: 8px;
+      }
+      .header-button {
+        padding: 5px 14px;
+        font-size: 0.8em;
+      }
+      .card-display-wrapper {
+        margin-top: 16px;
+      }
     }
   `}</style>
 );

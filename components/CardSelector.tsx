@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect } from 'react';
 import type { TarotCardData } from '../types';
 
@@ -13,8 +14,8 @@ const CardSelectorStyles = () => (
     .card-selector {
       display: flex;
       overflow-x: auto;
-      padding: 16px 0;
-      gap: 10px;
+      padding: 12px 0 8px 0;
+      gap: 8px;
       scrollbar-width: thin;
       scrollbar-color: var(--accent) var(--card-bg);
       -ms-overflow-style: none; /* IE and Edge */
@@ -25,28 +26,28 @@ const CardSelectorStyles = () => (
       opacity: 0.7;
     }
     .card-selector::-webkit-scrollbar {
-      height: 8px;
+      height: 6px;
     }
     .card-selector::-webkit-scrollbar-track {
       background: var(--card-bg);
-      border-radius: 4px;
+      border-radius: 3px;
     }
     .card-selector::-webkit-scrollbar-thumb {
       background-color: var(--accent);
-      border-radius: 4px;
+      border-radius: 3px;
     }
 
     .card-selector-button {
       flex-shrink: 0;
-      padding: 8px 16px;
-      border-radius: 20px;
+      padding: 5px 12px;
+      border-radius: 16px;
       border: 1px solid var(--accent);
       background: transparent;
       color: var(--muted);
       cursor: pointer;
       transition: all 0.3s;
       font-family: "Cormorant Garamond", serif;
-      font-size: 1em;
+      font-size: 0.9em;
       white-space: nowrap;
     }
     .card-selector-button:hover {
