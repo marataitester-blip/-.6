@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { TAROT_DECK } from './constants';
 import type { TarotCardData } from './types';
@@ -126,6 +127,25 @@ const GlobalStyles = () => (
   `}</style>
 );
 
+const preloadCardMedia = (card: TarotCardData): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    if (card.videoUrl) {
+      const video = document.createElement('video');
+      video.src = card.videoUrl;
+      video.oncanplaythrough = () => resolve();
+      video.onerror = (e) => reject(`Failed to load video: ${card.videoUrl}`);
+      video.load();
+    } else if (card.imageUrl) {
+      const img = new Image();
+      img.src = card.imageUrl;
+      img.onload = () => resolve();
+      img.onerror = () => reject(`Failed to load image: ${card.imageUrl}`);
+    } else {
+      resolve();
+    }
+  });
+};
+
 
 const App: React.FC = () => {
   const [selectedCard, setSelectedCard] = useState<TarotCardData>(TAROT_DECK[0]);
@@ -167,31 +187,44 @@ const App: React.FC = () => {
     setSelectedCard(card);
   }, [isShuffling]);
   
-  const handleRandomCardSelect = useCallback(() => {
+  const handleRandomCardSelect = useCallback(async () => {
     if (isShuffling) return;
 
     setIsShuffling(true);
     const initialCardId = selectedCard.id;
 
+    // Start visual shuffling
     shuffleIntervalRef.current = window.setInterval(() => {
       const randomIndex = Math.floor(Math.random() * TAROT_DECK.length);
       setSelectedCard(TAROT_DECK[randomIndex]);
     }, 150);
 
-    setTimeout(() => {
+    // Pick final card but don't show it yet
+    let finalCard: TarotCardData;
+    do {
+      const finalCardIndex = Math.floor(Math.random() * TAROT_DECK.length);
+      finalCard = TAROT_DECK[finalCardIndex];
+    } while (TAROT_DECK.length > 1 && finalCard.id === initialCardId);
+
+    // Preload media and ensure a minimum shuffle time
+    const minimumShuffleTime = new Promise(resolve => setTimeout(resolve, 3000));
+    
+    try {
+      await Promise.all([preloadCardMedia(finalCard), minimumShuffleTime]);
+    } catch (error) {
+      console.error("Media preloading failed:", error);
+      // Even if preloading fails, we proceed to show the card.
+    } finally {
+      // Stop visual shuffling
       if (shuffleIntervalRef.current) {
         clearInterval(shuffleIntervalRef.current);
         shuffleIntervalRef.current = null;
       }
 
-      let finalCardIndex;
-      do {
-        finalCardIndex = Math.floor(Math.random() * TAROT_DECK.length);
-      } while (TAROT_DECK.length > 1 && TAROT_DECK[finalCardIndex].id === initialCardId);
-
-      setSelectedCard(TAROT_DECK[finalCardIndex]);
+      // Set the final card and end the shuffling state
+      setSelectedCard(finalCard);
       setIsShuffling(false);
-    }, 3000);
+    }
   }, [isShuffling, selectedCard.id]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
