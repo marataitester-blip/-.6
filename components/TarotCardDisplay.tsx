@@ -126,6 +126,21 @@ const CardDisplayStyles = () => (
       width: 20px;
       height: 20px;
     }
+
+    @media (max-width: 767px) {
+      .card-title { 
+        font-size: 1.8em;
+      }
+      .card-keyword {
+        font-size: 1.3em;
+      }
+      .content-block h4 {
+        font-size: 1.4em;
+      }
+      .content-block p, .content-block span, .aspect-item span {
+        font-size: 1.15em;
+      }
+    }
   `}</style>
 );
 

@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect } from 'react';
 import type { TarotCardData } from '../types';
 
@@ -58,6 +57,13 @@ const CardSelectorStyles = () => (
       background: var(--accent);
       color: var(--bg);
       font-weight: 600;
+    }
+    
+    @media (max-width: 767px) {
+      .card-selector-button {
+        font-size: 1.05em;
+        padding: 6px 14px;
+      }
     }
   `}</style>
 );

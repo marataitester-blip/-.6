@@ -156,7 +156,7 @@ const GlobalStyles = () => (
         margin: 8px 0;
       }
       .app-title {
-        font-size: 1.6em;
+        font-size: 2.0em;
         letter-spacing: 1.5px;
       }
       .header-buttons {
@@ -165,12 +165,15 @@ const GlobalStyles = () => (
         flex-wrap: nowrap;
       }
       .header-button {
-        padding: 5px 10px;
-        font-size: 0.75em;
+        padding: 5px 12px;
+        font-size: 0.9em;
         white-space: nowrap;
       }
       .card-display-wrapper {
         margin-top: 16px;
+      }
+      .app-footer p {
+        font-size: 1.05em;
       }
     }
   `}</style>
