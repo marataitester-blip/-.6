@@ -3,7 +3,8 @@ export interface TarotCardData {
   id: number;
   name: string;
   keyword: string;
-  videoUrl: string;
+  videoUrl?: string;
+  imageUrl?: string;
   interpretation: {
     short: string;
     long: string;

@@ -1,31 +1,165 @@
-
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import type { TarotCardData } from '../types';
 
 declare global {
   interface Window {
     responsiveVoice: {
       speak: (text: string, voice: string, options?: object) => void;
+      cancel: () => void;
+      isPlaying: () => boolean;
     };
   }
 }
 
-const SpeakButton: React.FC<{ text: string }> = ({ text }) => {
-  const handleSpeak = () => {
-    if (window.responsiveVoice) {
-      window.responsiveVoice.speak(text, 'Russian Female');
-    } else {
-      console.error('ResponsiveVoice not loaded. Please ensure the script is included and an API key is provided if required.');
-      alert('Функция озвучивания не доступна. Проверьте подключение к интернету или настройки.');
+const CardDisplayStyles = () => (
+  <style>{`
+    .card-display-container {
+      animation: fade-in 0.6s ease-out forwards;
     }
-  };
+    @keyframes fade-in {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .card-video-container { 
+      display: flex; 
+      justify-content: center; 
+      margin: 16px 0;
+    }
+    .card-video-container video, .card-video-container img { 
+      width: 100%; 
+      max-width: 400px; 
+      height: auto; 
+      border-radius: 12px; 
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      object-fit: contain; /* Ensure image is not cropped */
+      background: #000; /* Add black background for letterboxing */
+    }
+    .card-title { 
+      text-align: center; 
+      font-size: 1.5em; 
+      color: var(--accent); 
+      margin: 12px 0 8px; 
+      font-family: "Cinzel", serif;
+    }
+    .card-keyword { 
+      text-align: center; 
+      color: var(--muted); 
+      font-size: 1.1em; 
+      margin-bottom: 24px;
+    }
+    .interpretation-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+    @media (min-width: 1024px) {
+      .interpretation-grid {
+        grid-template-columns: 420px 1fr;
+        gap: 32px;
+        align-items: flex-start;
+      }
+    }
+    .content-block { 
+      margin-top: 14px; 
+      padding: 16px; 
+      background: rgba(199, 168, 123, 0.05); 
+      border-left: 3px solid var(--accent); 
+      border-radius: 0 8px 8px 0;
+    }
+    .content-block h4 {
+      display: flex;
+      align-items: center;
+      font-family: "Cinzel", serif;
+      color: var(--accent);
+      font-size: 1.2em;
+      margin-bottom: 8px;
+    }
+    .content-block p, .content-block span {
+      color: var(--fg);
+    }
+    .aspects { 
+      display: grid; 
+      grid-template-columns: 1fr; 
+      gap: 12px; 
+      margin-top: 10px;
+    }
+    .aspect { 
+      background: rgba(255, 255, 255, 0.02); 
+      border: 1px solid rgba(199, 168, 123, 0.2); 
+      border-radius: 8px; 
+      padding: 12px;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .aspect strong { 
+      color: var(--accent);
+      flex-shrink: 0;
+      padding-top: 2px;
+    }
+    .speak-button {
+      margin-left: auto;
+      padding: 4px 12px;
+      font-size: 0.8em;
+      border-radius: 12px;
+      border: 1px solid var(--accent);
+      background: transparent;
+      color: var(--accent);
+      cursor: pointer;
+      transition: all 0.3s;
+      font-family: "Cinzel", serif;
+      flex-shrink: 0;
+    }
+    .speak-button:hover {
+      background: var(--accent);
+      color: var(--bg);
+    }
+    .speak-button.speaking {
+      background: #c77b7b;
+      color: var(--bg);
+      border-color: #c77b7b;
+    }
+  `}</style>
+);
+
+
+const SpeakButton: React.FC<{ text: string }> = ({ text }) => {
+  const [isSpeaking, setIsSpeaking] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (window.responsiveVoice && window.responsiveVoice.isPlaying()) {
+        window.responsiveVoice.cancel();
+      }
+    };
+  }, [text]);
+
+  const handleSpeak = useCallback(() => {
+    if (!window.responsiveVoice) {
+      console.error('ResponsiveVoice not loaded.');
+      alert('Функция озвучивания не доступна.');
+      return;
+    }
+
+    if (window.responsiveVoice.isPlaying()) {
+      window.responsiveVoice.cancel();
+      setIsSpeaking(false);
+    } else {
+      window.responsiveVoice.speak(text, 'Russian Female', {
+        onstart: () => setIsSpeaking(true),
+        onend: () => setIsSpeaking(false),
+        onerror: () => setIsSpeaking(false)
+      });
+    }
+  }, [text]);
+
 
   return (
     <button
       onClick={handleSpeak}
-      className="ml-4 px-3 py-1 text-xs bg-purple-600 hover:bg-purple-700 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:ring-offset-slate-800"
+      className={`speak-button ${isSpeaking ? 'speaking' : ''}`}
     >
-      Озвучить
+      {isSpeaking ? 'Стоп' : 'Озвучить'}
     </button>
   );
 };
@@ -38,66 +172,85 @@ const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card }) => {
   const cardKey = useMemo(() => card.id, [card]);
   const { interpretation } = card;
 
+  useEffect(() => {
+      if (window.responsiveVoice && window.responsiveVoice.isPlaying()) {
+          window.responsiveVoice.cancel();
+      }
+  }, [card]);
+
   return (
-    <div key={cardKey} className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start animate-fade-in">
-      <div className="flex flex-col items-center bg-slate-800/50 p-6 rounded-2xl shadow-2xl shadow-indigo-900/50 border border-slate-700">
-        <div className="w-full aspect-[2/3] max-w-sm rounded-lg overflow-hidden shadow-lg border-2 border-purple-500/50">
-          <video 
-            key={card.videoUrl} 
-            className="w-full h-full object-cover" 
-            autoPlay 
-            loop 
-            muted 
-            playsInline
-          >
-            <source src={card.videoUrl} type="video/mp4" />
-            Your browser does not support the video tag.
-          </video>
+    <div key={cardKey} className="card-display-container interpretation-grid">
+      <CardDisplayStyles />
+      <div>
+        <div className="card-video-container">
+          {card.videoUrl ? (
+            <video 
+              key={card.videoUrl} 
+              autoPlay 
+              loop 
+              muted 
+              playsInline
+            >
+              <source src={card.videoUrl} type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+          ) : card.imageUrl ? (
+            <img 
+              key={card.imageUrl}
+              src={card.imageUrl} 
+              alt={card.name} 
+            />
+          ) : (
+            <div className="card-video-container">
+               <img src="https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/rubashka.png" alt="Card Back" />
+            </div>
+          )}
         </div>
-        <div className="text-center mt-6">
-          <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-300 to-pink-400">{card.name}</h2>
-          <p className="text-xl text-indigo-300 font-light">{card.keyword}</p>
-        </div>
+        <h2 className="card-title">{card.name}</h2>
+        <p className="card-keyword">{card.keyword}</p>
       </div>
       
-      <div className="space-y-6 text-gray-300">
-        <div className="bg-slate-800/50 p-6 rounded-2xl border border-slate-700">
-          <h4 className="text-xl font-semibold text-purple-300 mb-2 flex items-center">
+      <div>
+        <div className="content-block">
+          <h4>
             Кратко
             <SpeakButton text={interpretation.short} />
           </h4>
-          <p className="leading-relaxed">{interpretation.short}</p>
+          <p>{interpretation.short}</p>
         </div>
-        <div className="bg-slate-800/50 p-6 rounded-2xl border border-slate-700">
-          <h4 className="text-xl font-semibold text-purple-300 mb-2 flex items-center">
+        <div className="content-block">
+          <h4>
             Развернуто
             <SpeakButton text={interpretation.long} />
           </h4>
-          <p className="leading-relaxed">{interpretation.long}</p>
+          <p>{interpretation.long}</p>
         </div>
-        <div className="bg-slate-800/50 p-6 rounded-2xl border border-slate-700">
-          <h4 className="text-xl font-semibold text-purple-300 mb-2">Практические векторы</h4>
-          <div className="space-y-3">
-            <div>
-              <strong className="text-indigo-300">Отношения:</strong> {interpretation.advice.relationships}
+        <div className="content-block">
+          <h4>Практические векторы</h4>
+          <div className="aspects">
+            <div className="aspect">
+              <strong>Отношения:</strong>
+              <span>{interpretation.advice.relationships}</span>
               <SpeakButton text={`Отношения: ${interpretation.advice.relationships}`} />
             </div>
-            <div>
-              <strong className="text-indigo-300">Здоровье:</strong> {interpretation.advice.health}
+            <div className="aspect">
+              <strong>Здоровье:</strong>
+              <span>{interpretation.advice.health}</span>
               <SpeakButton text={`Здоровье: ${interpretation.advice.health}`} />
             </div>
-            <div>
-              <strong className="text-indigo-300">Деньги:</strong> {interpretation.advice.money}
+            <div className="aspect">
+              <strong>Деньги:</strong>
+              <span>{interpretation.advice.money}</span>
               <SpeakButton text={`Деньги: ${interpretation.advice.money}`} />
             </div>
           </div>
         </div>
-        <div className="bg-slate-800/50 p-6 rounded-2xl border border-slate-700">
-          <h4 className="text-xl font-semibold text-purple-300 mb-2 flex items-center">
+        <div className="content-block">
+          <h4>
             Совет дня
             <SpeakButton text={interpretation.intent} />
           </h4>
-          <p className="leading-relaxed italic">{interpretation.intent}</p>
+          <p><em>{interpretation.intent}</em></p>
         </div>
       </div>
     </div>
@@ -105,25 +258,3 @@ const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card }) => {
 };
 
 export default TarotCardDisplay;
-
-const style = document.createElement('style');
-style.innerHTML = `
-  @keyframes fade-in {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  .animate-fade-in {
-    animation: fade-in 0.5s ease-out forwards;
-  }
-  .scrollbar-thin {
-    scrollbar-width: thin;
-    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
-  }
-  .scrollbar-thumb-indigo-500 {
-    --scrollbar-thumb: #6366f1;
-  }
-  .scrollbar-track-slate-800 {
-    --scrollbar-track: #1e293b;
-  }
-`;
-document.head.appendChild(style);

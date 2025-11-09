@@ -1,4 +1,3 @@
-
 import React from 'react';
 import type { TarotCardData } from '../types';
 
@@ -8,28 +7,69 @@ interface CardSelectorProps {
   onSelect: (card: TarotCardData) => void;
 }
 
+const CardSelectorStyles = () => (
+  <style>{`
+    .card-selector {
+      display: flex;
+      overflow-x: auto;
+      padding: 16px 0;
+      gap: 10px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--accent) var(--card-bg);
+    }
+    .card-selector::-webkit-scrollbar {
+      height: 8px;
+    }
+    .card-selector::-webkit-scrollbar-track {
+      background: var(--card-bg);
+      border-radius: 4px;
+    }
+    .card-selector::-webkit-scrollbar-thumb {
+      background-color: var(--accent);
+      border-radius: 4px;
+    }
+
+    .card-selector-button {
+      flex-shrink: 0;
+      padding: 8px 16px;
+      border-radius: 20px;
+      border: 1px solid var(--accent);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.3s;
+      font-family: "Cormorant Garamond", serif;
+      font-size: 1em;
+      white-space: nowrap;
+    }
+    .card-selector-button:hover {
+      background: rgba(199, 168, 123, 0.1);
+      color: var(--fg);
+    }
+    .card-selector-button.active {
+      background: var(--accent);
+      color: var(--bg);
+      font-weight: 600;
+    }
+  `}</style>
+);
+
 const CardSelector: React.FC<CardSelectorProps> = ({ cards, selectedCard, onSelect }) => {
   return (
-    <div className="py-4">
-      <div className="flex space-x-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-indigo-500 scrollbar-track-slate-800">
+    <>
+      <CardSelectorStyles />
+      <div className="card-selector">
         {cards.map((card) => (
           <button
             key={card.id}
             onClick={() => onSelect(card)}
-            className={`
-              flex-shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300
-              focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900
-              ${selectedCard.id === card.id
-                ? 'bg-indigo-600 text-white shadow-lg ring-2 ring-purple-400'
-                : 'bg-slate-700 text-gray-300 hover:bg-slate-600 hover:text-white'
-              }
-            `}
+            className={`card-selector-button ${selectedCard.id === card.id ? 'active' : ''}`}
           >
             {card.id}. {card.name}
           </button>
         ))}
       </div>
-    </div>
+    </>
   );
 };
 
