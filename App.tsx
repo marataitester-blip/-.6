@@ -5,6 +5,7 @@ import type { TarotCardData } from './types';
 import CardSelector from './components/CardSelector';
 import TarotCardDisplay from './components/TarotCardDisplay';
 import InitialCardView from './components/InitialCardView';
+import SplashScreen from './components/SplashScreen';
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: Array<string>;
@@ -40,6 +41,12 @@ const GlobalStyles = () => (
       background: #000 url(https://www.script-tutorials.com/demos/360/images/stars.png) repeat top center;
       animation: move-twink-back 200s linear infinite;
     }
+    
+    @keyframes appFadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .app-container {
+      animation: appFadeIn 1s ease-in-out;
+    }
+
     main {
       display: flex;
       flex-direction: column;
@@ -221,6 +228,7 @@ const preloadCardMedia = (card: TarotCardData): Promise<void> => {
 
 
 const App: React.FC = () => {
+  const [showSplash, setShowSplash] = useState(true);
   const [selectedCard, setSelectedCard] = useState<TarotCardData | null>(() => {
     // For Android, start with the first card displayed to bypass the initial screen.
     if (typeof navigator !== 'undefined' && /android/i.test(navigator.userAgent)) {
@@ -242,6 +250,13 @@ const App: React.FC = () => {
   const playSound = useCallback((sound: HTMLAudioElement) => {
     sound.currentTime = 0;
     sound.play().catch(error => console.error("Error playing sound effect:", error));
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+        setShowSplash(false);
+    }, 3000); // Display splash for 3 seconds
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -361,62 +376,67 @@ const App: React.FC = () => {
     touchEndX.current = 0;
   };
 
+  if (showSplash) {
+    return <SplashScreen />;
+  }
 
   return (
     <>
       <GlobalStyles />
-      <div className={`oracle-single ${selectedCard && !isShuffling ? 'card-revealed' : ''}`}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-      >
-        <main>
-          <header className="app-header">
-            <div className="title-wrapper">
-              <h1 className="app-title">
-                ASTRAL HERO TAROT
-              </h1>
+      <div className="app-container">
+        <div className={`oracle-single ${selectedCard && !isShuffling ? 'card-revealed' : ''}`}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+        >
+          <main>
+            <header className="app-header">
+              <div className="title-wrapper">
+                <h1 className="app-title">
+                  ASTRAL HERO TAROT
+                </h1>
+              </div>
+              <div className="header-buttons">
+                <button 
+                  onClick={handleRandomCardSelect}
+                  disabled={isShuffling}
+                  className="header-button pulsate"
+                >
+                  Что скажет Карта?
+                </button>
+                <button 
+                  onClick={handleInstallClick}
+                  disabled={isShuffling}
+                  className={`header-button ${!installPromptEvent ? 'disabled' : ''}`}
+                >
+                  На главный экран
+                </button>
+              </div>
+            </header>
+            
+            <div className={`card-display-wrapper ${isShuffling ? 'shuffling-active' : ''}`}>
+              {selectedCard ? (
+                <>
+                  <CardSelector
+                    cards={TAROT_DECK}
+                    selectedCard={selectedCard}
+                    onSelect={handleCardSelect}
+                    isShuffling={isShuffling}
+                  />
+                  <TarotCardDisplay card={selectedCard} isShuffling={isShuffling} />
+                </>
+              ) : (
+                <InitialCardView onCardClick={handleRandomCardSelect} />
+              )}
             </div>
-            <div className="header-buttons">
-              <button 
-                onClick={handleRandomCardSelect}
-                disabled={isShuffling}
-                className="header-button pulsate"
-              >
-                Что скажет Карта?
-              </button>
-              <button 
-                onClick={handleInstallClick}
-                disabled={isShuffling}
-                className={`header-button ${!installPromptEvent ? 'disabled' : ''}`}
-              >
-                На главный экран
-              </button>
-            </div>
-          </header>
+          </main>
           
-          <div className={`card-display-wrapper ${isShuffling ? 'shuffling-active' : ''}`}>
-            {selectedCard ? (
-              <>
-                <CardSelector
-                  cards={TAROT_DECK}
-                  selectedCard={selectedCard}
-                  onSelect={handleCardSelect}
-                  isShuffling={isShuffling}
-                />
-                <TarotCardDisplay card={selectedCard} isShuffling={isShuffling} />
-              </>
-            ) : (
-              <InitialCardView onCardClick={handleRandomCardSelect} />
-            )}
-          </div>
-        </main>
-        
-        {selectedCard && !isShuffling && (
-          <footer className="app-footer">
-            <p>ASTRAL HERO TAROT © 2024</p>
-          </footer>
-        )}
+          {selectedCard && !isShuffling && (
+            <footer className="app-footer">
+              <p>ASTRAL HERO TAROT © 2024</p>
+            </footer>
+          )}
+        </div>
       </div>
     </>
   );
