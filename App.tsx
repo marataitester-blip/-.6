@@ -221,7 +221,14 @@ const preloadCardMedia = (card: TarotCardData): Promise<void> => {
 
 
 const App: React.FC = () => {
-  const [selectedCard, setSelectedCard] = useState<TarotCardData | null>(null);
+  const [selectedCard, setSelectedCard] = useState<TarotCardData | null>(() => {
+    // For Android, start with the first card displayed to bypass the initial screen.
+    if (typeof navigator !== 'undefined' && /android/i.test(navigator.userAgent)) {
+      return TAROT_DECK[0];
+    }
+    // For other devices, show the initial card back view.
+    return null;
+  });
   const [installPromptEvent, setInstallPromptEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [isShuffling, setIsShuffling] = useState(false);
   const shuffleIntervalRef = useRef<number | null>(null);
