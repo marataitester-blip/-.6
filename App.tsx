@@ -3,6 +3,7 @@ import { TAROT_DECK } from './constants';
 import type { TarotCardData } from './types';
 import CardSelector from './components/CardSelector';
 import TarotCardDisplay from './components/TarotCardDisplay';
+import InitialCardView from './components/InitialCardView';
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: Array<string>;
@@ -12,19 +13,6 @@ interface BeforeInstallPromptEvent extends Event {
   }>;
   prompt(): Promise<void>;
 }
-
-const BellIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="24" height="24">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
-  </svg>
-);
-
-const BellSlashIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="24" height="24">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M9.25 7.52l.346-.345a6 6 0 018.006 8.006l-.345.346m-8.352-8.352L6.75 9.25m8.352 8.352l-1.5-1.5M12 21a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0M4.187 4.187a1.5 1.5 0 012.122 0L19.814 19.813a1.5 1.5 0 01-2.122 2.122L4.187 6.31a1.5 1.5 0 010-2.122z" />
-  </svg>
-);
-
 
 const GlobalStyles = () => (
   <style>{`
@@ -74,21 +62,6 @@ const GlobalStyles = () => (
       justify-content: center;
       align-items: center;
       gap: 12px;
-    }
-    .sound-toggle-button {
-      background: transparent;
-      border: none;
-      color: var(--accent);
-      cursor: pointer;
-      padding: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.3s ease;
-    }
-    .sound-toggle-button:hover {
-      color: white;
-      transform: scale(1.15);
     }
     .app-title {
       font-size: 2.2em;
@@ -247,11 +220,9 @@ const preloadCardMedia = (card: TarotCardData): Promise<void> => {
 
 
 const App: React.FC = () => {
-  const [selectedCard, setSelectedCard] = useState<TarotCardData>(TAROT_DECK[0]);
+  const [selectedCard, setSelectedCard] = useState<TarotCardData | null>(null);
   const [installPromptEvent, setInstallPromptEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [isShuffling, setIsShuffling] = useState(false);
-  const [isCardRevealed, setIsCardRevealed] = useState(false);
-  const [isSoundEnabled, setIsSoundEnabled] = useState(true);
   const shuffleIntervalRef = useRef<number | null>(null);
 
   const touchStartX = useRef<number>(0);
@@ -261,20 +232,9 @@ const App: React.FC = () => {
   const clickSound = useMemo(() => new Audio('https://cdn.pixabay.com/audio/2022/03/15/audio_2491a5499d.mp3'), []);
 
   const playSound = useCallback((sound: HTMLAudioElement) => {
-    if (isSoundEnabled) {
-      sound.currentTime = 0;
-      sound.play().catch(error => console.error("Error playing sound effect:", error));
-    }
-  }, [isSoundEnabled]);
-
-  const toggleSound = () => {
-    const newSoundState = !isSoundEnabled;
-    if (newSoundState) {
-        clickSound.currentTime = 0;
-        clickSound.play().catch(error => console.error("Error playing sound:", error));
-    }
-    setIsSoundEnabled(newSoundState);
-  };
+    sound.currentTime = 0;
+    sound.play().catch(error => console.error("Error playing sound effect:", error));
+  }, []);
 
   useEffect(() => {
     // Service Worker registration for PWA caching
@@ -320,7 +280,6 @@ const App: React.FC = () => {
     if (isShuffling) return;
     playSound(clickSound);
     setSelectedCard(card);
-    setIsCardRevealed(false);
     playSound(revealSound);
   }, [isShuffling, playSound, clickSound, revealSound]);
   
@@ -329,8 +288,7 @@ const App: React.FC = () => {
     playSound(clickSound);
 
     setIsShuffling(true);
-    setIsCardRevealed(false);
-    const initialCardId = selectedCard.id;
+    const initialCardId = selectedCard?.id;
 
     shuffleIntervalRef.current = window.setInterval(() => {
       const randomIndex = Math.floor(Math.random() * TAROT_DECK.length);
@@ -360,24 +318,23 @@ const App: React.FC = () => {
 
       setSelectedCard(finalCard);
       setIsShuffling(false);
-      setIsCardRevealed(true);
       playSound(revealSound);
     }
-  }, [isShuffling, selectedCard.id, playSound, clickSound, revealSound]);
+  }, [isShuffling, selectedCard, playSound, clickSound, revealSound]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    if (isShuffling) return;
+    if (isShuffling || !selectedCard) return;
     touchStartX.current = e.targetTouches[0].clientX;
     touchEndX.current = 0;
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (isShuffling) return;
+    if (isShuffling || !selectedCard) return;
     touchEndX.current = e.targetTouches[0].clientX;
   };
 
   const handleTouchEnd = () => {
-    if (isShuffling || !touchStartX.current || !touchEndX.current) return;
+    if (isShuffling || !touchStartX.current || !touchEndX.current || !selectedCard) return;
     
     const swipeDistance = touchStartX.current - touchEndX.current;
     const swipeThreshold = 50;
@@ -400,7 +357,7 @@ const App: React.FC = () => {
   return (
     <>
       <GlobalStyles />
-      <div className={`oracle-single ${isCardRevealed ? 'card-revealed' : ''}`}
+      <div className={`oracle-single ${selectedCard && !isShuffling ? 'card-revealed' : ''}`}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
@@ -408,9 +365,6 @@ const App: React.FC = () => {
         <main>
           <header className="app-header">
             <div className="title-wrapper">
-              <button onClick={toggleSound} className="sound-toggle-button" aria-label="Включить/выключить звук">
-                {isSoundEnabled ? <BellIcon /> : <BellSlashIcon />}
-              </button>
               <h1 className="app-title">
                 ASTRAL HERO TAROT
               </h1>
@@ -435,30 +389,35 @@ const App: React.FC = () => {
               <button 
                 onClick={handleInstallClick}
                 disabled={isShuffling}
-                className="header-button"
+                className={`header-button ${!installPromptEvent ? 'disabled' : ''}`}
               >
-                Сохранить на экран
+                На главный экран
               </button>
             </div>
           </header>
           
-          <CardSelector
-            cards={TAROT_DECK}
-            selectedCard={selectedCard}
-            onSelect={handleCardSelect}
-            isShuffling={isShuffling}
-          />
-
           <div className={`card-display-wrapper ${isShuffling ? 'shuffling-active' : ''}`}>
-            {selectedCard && <TarotCardDisplay key={selectedCard.id} card={selectedCard} isShuffling={isShuffling} />}
+            {selectedCard ? (
+              <>
+                <CardSelector
+                  cards={TAROT_DECK}
+                  selectedCard={selectedCard}
+                  onSelect={handleCardSelect}
+                  isShuffling={isShuffling}
+                />
+                <TarotCardDisplay card={selectedCard} isShuffling={isShuffling} />
+              </>
+            ) : (
+              <InitialCardView onCardClick={handleRandomCardSelect} />
+            )}
           </div>
-          
-          <footer className="app-footer">
-              <p>
-                  Интерпретации синтезированы ИИ на основе классических и современных школ Таро.
-              </p>
-          </footer>
         </main>
+        
+        {selectedCard && !isShuffling && (
+          <footer className="app-footer">
+            <p>ASTRAL HERO TAROT © 2024</p>
+          </footer>
+        )}
       </div>
     </>
   );

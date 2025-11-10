@@ -3,7 +3,7 @@ import type { TarotCardData } from '../types';
 
 interface CardSelectorProps {
   cards: TarotCardData[];
-  selectedCard: TarotCardData;
+  selectedCard: TarotCardData | null;
   onSelect: (card: TarotCardData) => void;
   isShuffling: boolean;
 }
@@ -72,13 +72,15 @@ const CardSelector: React.FC<CardSelectorProps> = ({ cards, selectedCard, onSele
   const buttonRefs = useRef<Map<number, HTMLButtonElement | null>>(new Map());
 
   useEffect(() => {
-    const button = buttonRefs.current.get(selectedCard.id);
-    if (button) {
-      button.scrollIntoView({
-        behavior: 'smooth',
-        block: 'nearest',
-        inline: 'center',
-      });
+    if (selectedCard) {
+      const button = buttonRefs.current.get(selectedCard.id);
+      if (button) {
+        button.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+          inline: 'center',
+        });
+      }
     }
   }, [selectedCard]);
 
@@ -91,7 +93,7 @@ const CardSelector: React.FC<CardSelectorProps> = ({ cards, selectedCard, onSele
             key={card.id}
             ref={(el) => buttonRefs.current.set(card.id, el)}
             onClick={() => onSelect(card)}
-            className={`card-selector-button ${selectedCard.id === card.id ? 'active' : ''}`}
+            className={`card-selector-button ${selectedCard?.id === card.id ? 'active' : ''}`}
           >
             {card.id}. {card.name}
           </button>
