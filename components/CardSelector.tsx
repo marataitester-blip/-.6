@@ -72,7 +72,7 @@ const CardSelector: React.FC<CardSelectorProps> = ({ cards, selectedCard, onSele
   const buttonRefs = useRef<Map<number, HTMLButtonElement | null>>(new Map());
 
   useEffect(() => {
-    if (selectedCard) {
+    if (selectedCard && !isShuffling) {
       const button = buttonRefs.current.get(selectedCard.id);
       if (button) {
         button.scrollIntoView({
@@ -82,7 +82,7 @@ const CardSelector: React.FC<CardSelectorProps> = ({ cards, selectedCard, onSele
         });
       }
     }
-  }, [selectedCard]);
+  }, [selectedCard, isShuffling]);
 
   return (
     <>
