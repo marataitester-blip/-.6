@@ -280,10 +280,18 @@ const App: React.FC = () => {
     };
   }, []);
 
-  const handleInstallClick = () => {
+  const handleInstallClick = useCallback(() => {
     playSound(clickSound);
     if (installPromptEvent) {
       installPromptEvent.prompt();
+      installPromptEvent.userChoice.then(choiceResult => {
+        if (choiceResult.outcome === 'accepted') {
+          console.log('User accepted the install prompt');
+        } else {
+          console.log('User dismissed the install prompt');
+        }
+        setInstallPromptEvent(null);
+      });
     } else {
       alert(
         'Чтобы добавить приложение на главный экран:\n\n' +
@@ -291,7 +299,7 @@ const App: React.FC = () => {
         'На Android: Откройте меню браузера и выберите "Установить приложение" или "Добавить на главный экран".'
       );
     }
-  };
+  }, [installPromptEvent, playSound, clickSound]);
 
   const handleCardSelect = useCallback((card: TarotCardData) => {
     if (isShuffling) return;
@@ -401,7 +409,8 @@ const App: React.FC = () => {
                 <button 
                   onClick={handleInstallClick}
                   disabled={isShuffling}
-                  className={`header-button ${!installPromptEvent ? 'disabled' : ''}`}
+                  className={`header-button ${installPromptEvent ? 'pulsate' : ''}`}
+                  title={installPromptEvent ? 'Установить приложение' : 'Как установить приложение'}
                 >
                   <svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
