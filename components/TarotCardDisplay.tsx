@@ -189,7 +189,7 @@ const getRussianVoice = (): SpeechSynthesisVoice | null => {
   if (allVoices.length === 0) {
     return null;
   }
-  const maleVoiceMatcher = /male|muzh|mikhail|dmitry|мужской|муж|yuri/i;
+  const maleVoiceMatcher = /male|muzh|mikhail|dmitry|мужской|муж|yuri|maxim|pavel/i;
   const russianLangMatcher = /^ru(-RU)?$/i;
 
   return (
@@ -251,7 +251,7 @@ const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling }
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.voice = voiceToUse;
     utterance.lang = 'ru-RU';
-    utterance.pitch = 1;
+    utterance.pitch = 0.7;
     utterance.rate = 0.8;
     
     utterance.onstart = () => setSpeakingSection(sectionId);
