@@ -5,7 +5,6 @@ import type { TarotCardData } from './types';
 import CardSelector from './components/CardSelector';
 import TarotCardDisplay from './components/TarotCardDisplay';
 import InitialCardView from './components/InitialCardView';
-import SplashScreen from './components/SplashScreen';
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: Array<string>;
@@ -229,7 +228,6 @@ const preloadCardMedia = (card: TarotCardData): Promise<void> => {
 
 
 const App: React.FC = () => {
-  const [showSplash, setShowSplash] = useState(true);
   const [selectedCard, setSelectedCard] = useState<TarotCardData | null>(null);
   const [installPromptEvent, setInstallPromptEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [isShuffling, setIsShuffling] = useState(false);
@@ -244,13 +242,6 @@ const App: React.FC = () => {
   const playSound = useCallback((sound: HTMLAudioElement) => {
     sound.currentTime = 0;
     sound.play().catch(error => console.error("Error playing sound effect:", error));
-  }, []);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-        setShowSplash(false);
-    }, 3000); // Display splash for 3 seconds
-    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -377,10 +368,6 @@ const App: React.FC = () => {
     touchStartX.current = 0;
     touchEndX.current = 0;
   };
-
-  if (showSplash) {
-    return <SplashScreen />;
-  }
 
   return (
     <>
