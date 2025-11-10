@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { TAROT_DECK } from './constants';
 import type { TarotCardData } from './types';
@@ -370,15 +371,6 @@ const App: React.FC = () => {
               </h1>
             </div>
             <div className="header-buttons">
-              <a 
-                href="https://t.me/+y7Inf371g7w0NzMy" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className={`header-button ${isShuffling ? 'disabled' : ''}`}
-                onClick={() => playSound(clickSound)}
-              >
-                Связь с Мастером
-              </a>
               <button 
                 onClick={handleRandomCardSelect}
                 disabled={isShuffling}
