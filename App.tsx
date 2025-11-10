@@ -198,18 +198,19 @@ const GlobalStyles = () => (
         margin: 8px 0;
       }
       .app-title {
-        font-size: 1.8em;
-        letter-spacing: 1.5px;
+        font-size: 1.6em;
+        letter-spacing: 1px;
+        white-space: nowrap;
       }
       .header-buttons {
-        gap: 8px;
+        gap: 6px;
         margin-top: 8px;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
         justify-content: center;
       }
       .header-button {
-        padding: 8px 14px;
-        font-size: 1em;
+        padding: 6px 12px;
+        font-size: 0.85em;
         display: inline-flex;
         align-items: center;
         justify-content: center;
