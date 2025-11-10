@@ -3,15 +3,23 @@ import type { TarotCardData } from '../types';
 
 const CardDisplayStyles = () => (
   <style>{`
+    @keyframes mystical-reveal {
+      from { 
+        opacity: 0; 
+        transform: scale(0.95) translateY(20px); 
+        filter: blur(4px) brightness(1.5);
+      }
+      to { 
+        opacity: 1; 
+        transform: scale(1) translateY(0);
+        filter: blur(0) brightness(1);
+      }
+    }
     .card-display-container {
-      animation: fade-in 0.6s ease-out forwards;
+      animation: mystical-reveal 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
     }
     .card-display-container.is-shuffling {
       animation: none;
-    }
-    @keyframes fade-in {
-      from { opacity: 0; transform: translateY(15px); }
-      to { opacity: 1; transform: translateY(0); }
     }
     .card-video-container { 
       display: flex; 
@@ -58,7 +66,7 @@ const CardDisplayStyles = () => (
     .content-block { 
       margin-top: 14px; 
       padding: 16px; 
-      background: rgba(199, 168, 123, 0.05); 
+      background: rgba(240, 196, 117, 0.05); 
       border-left: 3px solid var(--accent); 
       border-radius: 0 8px 8px 0;
     }
@@ -244,7 +252,7 @@ const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling }
     utterance.voice = voiceToUse;
     utterance.lang = 'ru-RU';
     utterance.pitch = 1;
-    utterance.rate = 1;
+    utterance.rate = 0.8;
     
     utterance.onstart = () => setSpeakingSection(sectionId);
     utterance.onend = () => setSpeakingSection(null);

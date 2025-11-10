@@ -13,17 +13,34 @@ interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
 }
 
+const BellIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="24" height="24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+  </svg>
+);
+
+const BellSlashIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="24" height="24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M9.25 7.52l.346-.345a6 6 0 018.006 8.006l-.345.346m-8.352-8.352L6.75 9.25m8.352 8.352l-1.5-1.5M12 21a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0M4.187 4.187a1.5 1.5 0 012.122 0L19.814 19.813a1.5 1.5 0 01-2.122 2.122L4.187 6.31a1.5 1.5 0 010-2.122z" />
+  </svg>
+);
+
+
 const GlobalStyles = () => (
   <style>{`
     :root { 
-      --bg: #0f0f14; 
-      --fg: #eae6df; 
-      --muted: #c9c3b8; 
-      --accent: #c7a87b; 
-      --card-bg: #16161d; 
+      --bg: #0a0914; 
+      --fg: #e0e0e0; 
+      --muted: #a0a0b0; 
+      --accent: #f0c475; 
+      --card-bg: #1a1829; 
     }
     html, body, #root {
       height: 100%;
+    }
+    @keyframes move-twink-back {
+        from {background-position:0 0;}
+        to {background-position:-10000px 5000px;}
     }
     body {
       background-color: var(--bg);
@@ -31,6 +48,8 @@ const GlobalStyles = () => (
       font-family: "Cormorant Garamond", "Georgia", serif;
       line-height: 1.5;
       margin: 0;
+      background: #000 url(https://www.script-tutorials.com/demos/360/images/stars.png) repeat top center;
+      animation: move-twink-back 200s linear infinite;
     }
     main {
       display: flex;
@@ -50,12 +69,35 @@ const GlobalStyles = () => (
       text-align: center;
       margin: 16px 0;
     }
+    .title-wrapper {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+    }
+    .sound-toggle-button {
+      background: transparent;
+      border: none;
+      color: var(--accent);
+      cursor: pointer;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+    }
+    .sound-toggle-button:hover {
+      color: white;
+      transform: scale(1.15);
+    }
     .app-title {
       font-size: 2.2em;
       color: var(--accent);
       font-family: "Cinzel", serif;
       font-weight: 700;
       letter-spacing: 2px;
+      margin: 0;
+      text-shadow: 0 0 10px rgba(240, 196, 117, 0.5);
     }
     .header-buttons {
       margin-top: 12px;
@@ -144,7 +186,7 @@ const GlobalStyles = () => (
       text-align: center;
       margin-top: 48px;
       padding: 16px 0;
-      border-top: 1px solid rgba(199, 168, 123, 0.2);
+      border-top: 1px solid rgba(240, 196, 117, 0.2);
     }
     .app-footer p {
       color: var(--muted);
@@ -156,7 +198,7 @@ const GlobalStyles = () => (
         margin: 8px 0;
       }
       .app-title {
-        font-size: 2.0em;
+        font-size: 1.8em;
         letter-spacing: 1.5px;
       }
       .header-buttons {
@@ -208,18 +250,30 @@ const App: React.FC = () => {
   const [installPromptEvent, setInstallPromptEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [isShuffling, setIsShuffling] = useState(false);
   const [isCardRevealed, setIsCardRevealed] = useState(false);
+  const [isSoundEnabled, setIsSoundEnabled] = useState(true);
   const shuffleIntervalRef = useRef<number | null>(null);
 
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
   
-  const soundEffect = useMemo(() => new Audio('https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/keyword_reveal.mp3'), []);
+  const revealSound = useMemo(() => new Audio('https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/keyword_reveal.mp3'), []);
+  const clickSound = useMemo(() => new Audio('https://cdn.pixabay.com/audio/2022/03/15/audio_2491a5499d.mp3'), []);
 
-  const playSound = useCallback(() => {
-    soundEffect.currentTime = 0;
-    soundEffect.play().catch(error => console.error("Error playing sound effect:", error));
-  }, [soundEffect]);
+  const playSound = useCallback((sound: HTMLAudioElement) => {
+    if (isSoundEnabled) {
+      sound.currentTime = 0;
+      sound.play().catch(error => console.error("Error playing sound effect:", error));
+    }
+  }, [isSoundEnabled]);
 
+  const toggleSound = () => {
+    const newSoundState = !isSoundEnabled;
+    if (newSoundState) {
+        clickSound.currentTime = 0;
+        clickSound.play().catch(error => console.error("Error playing sound:", error));
+    }
+    setIsSoundEnabled(newSoundState);
+  };
 
   useEffect(() => {
     // Service Worker registration for PWA caching
@@ -249,6 +303,7 @@ const App: React.FC = () => {
   }, []);
 
   const handleInstallClick = () => {
+    playSound(clickSound);
     if (installPromptEvent) {
       installPromptEvent.prompt();
     } else {
@@ -262,13 +317,15 @@ const App: React.FC = () => {
 
   const handleCardSelect = useCallback((card: TarotCardData) => {
     if (isShuffling) return;
+    playSound(clickSound);
     setSelectedCard(card);
     setIsCardRevealed(false);
-    playSound();
-  }, [isShuffling, playSound]);
+    playSound(revealSound);
+  }, [isShuffling, playSound, clickSound, revealSound]);
   
   const handleRandomCardSelect = useCallback(async () => {
     if (isShuffling) return;
+    playSound(clickSound);
 
     setIsShuffling(true);
     setIsCardRevealed(false);
@@ -303,9 +360,9 @@ const App: React.FC = () => {
       setSelectedCard(finalCard);
       setIsShuffling(false);
       setIsCardRevealed(true);
-      playSound();
+      playSound(revealSound);
     }
-  }, [isShuffling, selectedCard.id, playSound]);
+  }, [isShuffling, selectedCard.id, playSound, clickSound, revealSound]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (isShuffling) return;
@@ -349,15 +406,21 @@ const App: React.FC = () => {
       >
         <main>
           <header className="app-header">
-            <h1 className="app-title">
-              ASTRAL HERO TAROT
-            </h1>
+            <div className="title-wrapper">
+              <button onClick={toggleSound} className="sound-toggle-button" aria-label="Включить/выключить звук">
+                {isSoundEnabled ? <BellIcon /> : <BellSlashIcon />}
+              </button>
+              <h1 className="app-title">
+                ASTRAL HERO TAROT
+              </h1>
+            </div>
             <div className="header-buttons">
               <a 
                 href="https://t.me/+y7Inf371g7w0NzMy" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className={`header-button ${isShuffling ? 'disabled' : ''}`}
+                onClick={() => playSound(clickSound)}
               >
                 Связь с Мастером
               </a>
@@ -386,7 +449,7 @@ const App: React.FC = () => {
           />
 
           <div className={`card-display-wrapper ${isShuffling ? 'shuffling-active' : ''}`}>
-            {selectedCard && <TarotCardDisplay card={selectedCard} isShuffling={isShuffling} />}
+            {selectedCard && <TarotCardDisplay key={selectedCard.id} card={selectedCard} isShuffling={isShuffling} />}
           </div>
           
           <footer className="app-footer">
