@@ -68,14 +68,14 @@ const GlobalStyles = () => (
     .header-button {
       background: transparent;
       color: var(--accent);
-      padding: 6px 16px;
-      border-radius: 20px;
+      padding: 5px 14px;
+      border-radius: 18px;
       text-decoration: none;
       font-family: "Cinzel", serif;
       border: 1px solid var(--accent);
       cursor: pointer;
       transition: all 0.3s ease;
-      font-size: 0.85em;
+      font-size: 0.8em;
     }
     .header-button:hover:not(:disabled) {
       background: var(--accent);
@@ -166,9 +166,8 @@ const GlobalStyles = () => (
         justify-content: center;
       }
       .header-button {
-        padding: 12px 18px;
-        font-size: 1.1em;
-        min-height: 44px;
+        padding: 8px 14px;
+        font-size: 1em;
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -209,7 +208,6 @@ const App: React.FC = () => {
   const [installPromptEvent, setInstallPromptEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [isShuffling, setIsShuffling] = useState(false);
   const [isCardRevealed, setIsCardRevealed] = useState(false);
-  const [isShareSupported, setIsShareSupported] = useState(false);
   const shuffleIntervalRef = useRef<number | null>(null);
 
   const touchStartX = useRef<number>(0);
@@ -244,11 +242,6 @@ const App: React.FC = () => {
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    
-    // Check for Web Share API support
-    if (navigator.share) {
-      setIsShareSupported(true);
-    }
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -266,60 +259,6 @@ const App: React.FC = () => {
       );
     }
   };
-
-  const handleShareClick = async () => {
-    if (!navigator.share) {
-      alert('Функция "Поделиться" не поддерживается в вашем браузере.');
-      return;
-    }
-
-    const title = 'ASTRAL HERO TAROT';
-    const text = `Моя карта дня: ${selectedCard.name} (${selectedCard.keyword}). Узнай свою судьбу!`;
-    const appUrl = window.location.href;
-
-    try {
-      if (selectedCard.videoUrl) {
-        await navigator.share({
-          title,
-          text: `${text}\nСмотреть анимацию:`,
-          url: selectedCard.videoUrl,
-        });
-        return;
-      }
-
-      if (selectedCard.imageUrl) {
-        try {
-          const response = await fetch(selectedCard.imageUrl);
-          if (!response.ok) throw new Error('Image fetch failed');
-          const blob = await response.blob();
-          const file = new File([blob], `${selectedCard.name.toLowerCase().replace(/\s/g, '_')}.png`, { type: blob.type });
-
-          if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            await navigator.share({
-              title,
-              text,
-              files: [file],
-            });
-            return;
-          }
-        } catch (error) {
-          console.error("Couldn't share image file, falling back to URL:", error);
-        }
-      }
-
-      await navigator.share({
-        title,
-        text,
-        url: appUrl,
-      });
-
-    } catch (error) {
-      if ((error as Error).name !== 'AbortError') {
-        console.error('Error sharing:', error);
-      }
-    }
-  };
-
 
   const handleCardSelect = useCallback((card: TarotCardData) => {
     if (isShuffling) return;
@@ -429,15 +368,6 @@ const App: React.FC = () => {
               >
                 Что скажет Карта?
               </button>
-              {isShareSupported && (
-                <button 
-                  onClick={handleShareClick}
-                  disabled={isShuffling}
-                  className="header-button"
-                >
-                  Поделиться
-                </button>
-              )}
               <button 
                 onClick={handleInstallClick}
                 disabled={isShuffling}
