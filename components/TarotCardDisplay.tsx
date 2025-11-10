@@ -222,6 +222,9 @@ interface TarotCardDisplayProps {
 }
 
 const getRussianVoice = (): SpeechSynthesisVoice | null => {
+  if (!('speechSynthesis' in window) || typeof window.speechSynthesis.getVoices !== 'function') {
+    return null;
+  }
   const allVoices = window.speechSynthesis.getVoices();
   if (allVoices.length === 0) {
     return null;
@@ -242,6 +245,12 @@ const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling }
   const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
 
   useEffect(() => {
+    // Check for API support to avoid crashes in unsupported environments like Telegram's webview
+    if (!('speechSynthesis' in window) || typeof window.speechSynthesis.getVoices !== 'function') {
+      console.warn('Speech Synthesis API not supported in this browser/webview.');
+      return;
+    }
+
     const setVoice = () => {
       const voice = getRussianVoice();
       if (voice) {
@@ -260,6 +269,12 @@ const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling }
   }, []);
 
   const handleSpeak = useCallback((text: string, sectionId: string) => {
+    if (!('speechSynthesis' in window)) {
+      console.error('Speech synthesis not supported');
+      alert('Сервис озвучивания не поддерживается в этом браузере.');
+      return;
+    }
+
     if (speakingSection === sectionId) {
       window.speechSynthesis.cancel();
       setSpeakingSection(null);
@@ -302,7 +317,7 @@ const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling }
   }, [selectedVoice, speakingSection]);
 
   useEffect(() => {
-    if (window.speechSynthesis.speaking) {
+    if (window.speechSynthesis && window.speechSynthesis.speaking) {
       window.speechSynthesis.cancel();
       setSpeakingSection(null);
     }
@@ -354,7 +369,7 @@ const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling }
                   className={`speaker-button ${speakingSection === 'short' ? 'is-playing' : ''}`}
                   aria-label="Озвучить краткое значение"
                   disabled={!selectedVoice}
-                  title={selectedVoice ? "Озвучить" : "Озвучивание загружается..."}
+                  title={selectedVoice ? "Озвучить" : "Озвучивание недоступно"}
                 >
                   <SpeakerIcon isPlaying={speakingSection === 'short'} />
                 </button>
@@ -370,7 +385,7 @@ const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling }
                   className={`speaker-button ${speakingSection === 'long' ? 'is-playing' : ''}`}
                   aria-label="Озвучить подробное толкование"
                   disabled={!selectedVoice}
-                  title={selectedVoice ? "Озвучить" : "Озвучивание загружается..."}
+                  title={selectedVoice ? "Озвучить" : "Озвучивание недоступно"}
                 >
                   <SpeakerIcon isPlaying={speakingSection === 'long'} />
                 </button>
@@ -386,7 +401,7 @@ const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling }
                     className={`speaker-button ${speakingSection === 'advice' ? 'is-playing' : ''}`}
                     aria-label="Озвучить советы карты"
                     disabled={!selectedVoice}
-                    title={selectedVoice ? "Озвучить" : "Озвучивание загружается..."}
+                    title={selectedVoice ? "Озвучить" : "Озвучивание недоступно"}
                   >
                     <SpeakerIcon isPlaying={speakingSection === 'advice'} />
                   </button>
@@ -415,7 +430,7 @@ const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling }
                   className={`speaker-button ${speakingSection === 'intent' ? 'is-playing' : ''}`}
                   aria-label="Озвучить аффирмацию"
                   disabled={!selectedVoice}
-                  title={selectedVoice ? "Озвучить" : "Озвучивание загружается..."}
+                  title={selectedVoice ? "Озвучить" : "Озвучивание недоступно"}
                 >
                   <SpeakerIcon isPlaying={speakingSection === 'intent'} />
                 </button>
