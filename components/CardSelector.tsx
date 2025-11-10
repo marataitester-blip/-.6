@@ -20,10 +20,6 @@ const CardSelectorStyles = () => (
       -ms-overflow-style: none; /* IE and Edge */
       -webkit-overflow-scrolling: touch; /* Momentum scrolling for iOS */
     }
-    .card-selector.shuffling {
-      pointer-events: none;
-      opacity: 0.7;
-    }
     .card-selector::-webkit-scrollbar {
       height: 6px;
     }
@@ -87,7 +83,7 @@ const CardSelector: React.FC<CardSelectorProps> = ({ cards, selectedCard, onSele
   return (
     <>
       <CardSelectorStyles />
-      <div className={`card-selector ${isShuffling ? 'shuffling' : ''}`}>
+      <div className="card-selector">
         {cards.map((card) => (
           <button
             key={card.id}

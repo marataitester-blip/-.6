@@ -130,6 +130,39 @@ const CardDisplayStyles = () => (
       width: 24px;
       height: 24px;
     }
+    
+    .master-response-container {
+      margin-top: 24px;
+      padding-bottom: 16px;
+      text-align: center;
+    }
+    
+    .master-response-button {
+      display: inline-block;
+      padding: 12px 24px;
+      font-family: "Cinzel", serif;
+      font-size: 1.2em;
+      font-weight: 700;
+      color: #0a0914;
+      background: linear-gradient(145deg, #f0c475, #ffd700);
+      border: none;
+      border-radius: 50px;
+      text-decoration: none;
+      box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+    
+    .master-response-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(255, 215, 0, 0.6);
+    }
+    
+    .master-response-button:active {
+      transform: translateY(0);
+      box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+    }
+
 
     @media (max-width: 767px) {
       .card-title { 
@@ -150,6 +183,10 @@ const CardDisplayStyles = () => (
       .speaker-button svg {
         width: 40px; /* Increased size */
         height: 40px;
+      }
+      .master-response-button {
+        font-size: 1.3em;
+        padding: 14px 28px;
       }
     }
   `}</style>
@@ -276,9 +313,6 @@ const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling }
   , [card]);
 
   const cardMedia = useMemo(() => {
-    if (isShuffling) {
-      return <img src="https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/rubashka.png" alt="Тасование..." />;
-    }
     if (card.videoUrl) {
       return (
         <video
@@ -296,7 +330,7 @@ const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling }
       return <img key={card.id} src={card.imageUrl} alt={card.name} />;
     }
     return null;
-  }, [card, isShuffling]);
+  }, [card]);
 
   return (
     <>
@@ -307,11 +341,11 @@ const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling }
             <div className="card-video-container">
               {cardMedia}
             </div>
-            <h2 className="card-title">{isShuffling ? 'Тасование...' : `${card.id}. ${card.name}`}</h2>
-            <p className="card-keyword">{isShuffling ? 'Позвольте судьбе сделать выбор' : card.keyword}</p>
+            <h2 className="card-title">{`${card.id}. ${card.name}`}</h2>
+            <p className="card-keyword">{card.keyword}</p>
           </div>
 
-          <div className="card-text-column" style={{ visibility: isShuffling ? 'hidden' : 'visible' }}>
+          <div className="card-text-column">
             <div className="content-block">
               <h4>
                 <span>Краткое значение</span>
@@ -319,7 +353,7 @@ const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling }
                   onClick={() => handleSpeak(card.interpretation.short, 'short')} 
                   className={`speaker-button ${speakingSection === 'short' ? 'is-playing' : ''}`}
                   aria-label="Озвучить краткое значение"
-                  disabled={!selectedVoice || isShuffling}
+                  disabled={!selectedVoice}
                   title={selectedVoice ? "Озвучить" : "Озвучивание загружается..."}
                 >
                   <SpeakerIcon isPlaying={speakingSection === 'short'} />
@@ -335,7 +369,7 @@ const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling }
                   onClick={() => handleSpeak(card.interpretation.long, 'long')}
                   className={`speaker-button ${speakingSection === 'long' ? 'is-playing' : ''}`}
                   aria-label="Озвучить подробное толкование"
-                  disabled={!selectedVoice || isShuffling}
+                  disabled={!selectedVoice}
                   title={selectedVoice ? "Озвучить" : "Озвучивание загружается..."}
                 >
                   <SpeakerIcon isPlaying={speakingSection === 'long'} />
@@ -351,7 +385,7 @@ const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling }
                     onClick={() => handleSpeak(adviceText, 'advice')} 
                     className={`speaker-button ${speakingSection === 'advice' ? 'is-playing' : ''}`}
                     aria-label="Озвучить советы карты"
-                    disabled={!selectedVoice || isShuffling}
+                    disabled={!selectedVoice}
                     title={selectedVoice ? "Озвучить" : "Озвучивание загружается..."}
                   >
                     <SpeakerIcon isPlaying={speakingSection === 'advice'} />
@@ -380,13 +414,24 @@ const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling }
                   onClick={() => handleSpeak(card.interpretation.intent, 'intent')}
                   className={`speaker-button ${speakingSection === 'intent' ? 'is-playing' : ''}`}
                   aria-label="Озвучить аффирмацию"
-                  disabled={!selectedVoice || isShuffling}
+                  disabled={!selectedVoice}
                   title={selectedVoice ? "Озвучить" : "Озвучивание загружается..."}
                 >
                   <SpeakerIcon isPlaying={speakingSection === 'intent'} />
                 </button>
               </h4>
               <p><em>{card.interpretation.intent}</em></p>
+            </div>
+            
+            <div className="master-response-container">
+              <a
+                href="https://t.me/otvety_mastera_astralhero_tarot"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="master-response-button"
+              >
+                Соединитесь с телеграмм
+              </a>
             </div>
           </div>
         </div>
