@@ -165,8 +165,8 @@ const GlobalStyles = () => (
         flex-wrap: nowrap;
       }
       .header-button {
-        padding: 5px 12px;
-        font-size: 0.9em;
+        padding: 8px 16px;
+        font-size: 1em;
         white-space: nowrap;
       }
       .card-display-wrapper {

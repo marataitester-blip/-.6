@@ -180,40 +180,29 @@ const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling }
   const [speakingSection, setSpeakingSection] = useState<string | null>(null);
   const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
 
+  const findAndSetVoice = useCallback(() => {
+    const allVoices = window.speechSynthesis.getVoices();
+    if (allVoices.length === 0) {
+      return;
+    }
+
+    const maleVoiceMatcher = /male|muzh|mikhail|муж|yuri/i;
+    const russianLangMatcher = /^ru(-RU)?$/i;
+
+    const finalVoice = 
+      allVoices.find(v => russianLangMatcher.test(v.lang) && maleVoiceMatcher.test(v.name)) ||
+      allVoices.find(v => russianLangMatcher.test(v.lang)) ||
+      allVoices.find(v => maleVoiceMatcher.test(v.name)) ||
+      allVoices[0];
+
+    if (finalVoice) {
+      setSelectedVoice(finalVoice);
+    }
+  }, []);
+
   useEffect(() => {
-    const loadVoices = () => {
-      const allVoices = window.speechSynthesis.getVoices();
-      if (allVoices.length === 0) return;
-
-      const maleVoiceMatcher = /male|muzh|mikhail|муж|yuri/i;
-      const russianLangMatcher = /^ru(-RU)?$/i;
-
-      let finalVoice: SpeechSynthesisVoice | undefined;
-
-      // 1. Prioritize Russian Male voice
-      finalVoice = allVoices.find(v => russianLangMatcher.test(v.lang) && maleVoiceMatcher.test(v.name));
-
-      // 2. Any Russian voice as a fallback
-      if (!finalVoice) {
-        finalVoice = allVoices.find(v => russianLangMatcher.test(v.lang));
-      }
-      
-      // 3. Any Male voice as a second fallback (for timbre, but might mispronounce)
-      if (!finalVoice) {
-        finalVoice = allVoices.find(v => maleVoiceMatcher.test(v.name));
-      }
-      
-      // 4. Fallback to the first available voice
-      if (!finalVoice) {
-        finalVoice = allVoices[0];
-      }
-
-      setSelectedVoice(finalVoice || null);
-    };
-
-    // Voices are loaded asynchronously
-    loadVoices();
-    window.speechSynthesis.onvoiceschanged = loadVoices;
+    findAndSetVoice();
+    window.speechSynthesis.onvoiceschanged = findAndSetVoice;
 
     return () => {
       window.speechSynthesis.onvoiceschanged = null;
@@ -221,52 +210,64 @@ const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling }
         window.speechSynthesis.cancel();
       }
     };
-  }, []);
+  }, [findAndSetVoice]);
 
   const handleSpeak = useCallback((text: string, sectionId: string) => {
-    if (!selectedVoice) {
-      console.error('Voice not available or not loaded yet.');
-      alert('Сервис озвучивания недоступен в вашем браузере или еще не загрузился. Пожалуйста, попробуйте снова через несколько секунд.');
-      return;
-    }
-
     if (speakingSection === sectionId) {
       window.speechSynthesis.cancel();
       setSpeakingSection(null);
-    } else {
-      if (window.speechSynthesis.speaking) {
-        window.speechSynthesis.cancel();
-      }
-      
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.voice = selectedVoice;
-      utterance.lang = 'ru-RU'; // Force Russian language for the utterance
-      
-      utterance.onstart = () => {
-        setSpeakingSection(sectionId);
-      };
-      
-      utterance.onend = () => {
-        setSpeakingSection(null);
-      };
-      
-      utterance.onerror = (e) => {
-        setSpeakingSection(null);
-        console.error('Speech synthesis error:', e);
-      };
-      
-      window.speechSynthesis.speak(utterance);
+      return;
     }
-  }, [selectedVoice, speakingSection]);
+
+    if (window.speechSynthesis.speaking) {
+      window.speechSynthesis.cancel();
+    }
+    
+    let voiceToUse = selectedVoice;
+
+    if (!voiceToUse) {
+      findAndSetVoice(); 
+      const allVoices = window.speechSynthesis.getVoices();
+      if (allVoices.length > 0) {
+        const maleVoiceMatcher = /male|muzh|mikhail|муж|yuri/i;
+        const russianLangMatcher = /^ru(-RU)?$/i;
+        voiceToUse = 
+            allVoices.find(v => russianLangMatcher.test(v.lang) && maleVoiceMatcher.test(v.name)) ||
+            allVoices.find(v => russianLangMatcher.test(v.lang)) ||
+            allVoices.find(v => maleVoiceMatcher.test(v.name)) ||
+            allVoices[0] || null;
+        
+        if (voiceToUse && !selectedVoice) {
+            setSelectedVoice(voiceToUse);
+        }
+      }
+    }
+    
+    if (!voiceToUse) {
+      console.error('Speech synthesis voice not available.');
+      alert('Сервис озвучивания недоступен. Пожалуйста, убедитесь, что ваш браузер обновлен, или попробуйте перезагрузить страницу.');
+      return;
+    }
+      
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.voice = voiceToUse;
+    utterance.lang = 'ru-RU';
+    
+    utterance.onstart = () => setSpeakingSection(sectionId);
+    utterance.onend = () => setSpeakingSection(null);
+    utterance.onerror = (e) => {
+      setSpeakingSection(null);
+      console.error('Speech synthesis error:', e);
+    };
+    
+    window.speechSynthesis.speak(utterance);
+  }, [selectedVoice, speakingSection, findAndSetVoice]);
 
   useEffect(() => {
-    // Stop speech when card changes
-    return () => {
-      if (window.speechSynthesis.speaking) {
-        window.speechSynthesis.cancel();
-        setSpeakingSection(null);
-      }
-    };
+    if (window.speechSynthesis.speaking) {
+      window.speechSynthesis.cancel();
+      setSpeakingSection(null);
+    }
   }, [card]);
   
   const adviceText = useMemo(() => 
