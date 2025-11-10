@@ -162,11 +162,16 @@ const GlobalStyles = () => (
       .header-buttons {
         gap: 8px;
         margin-top: 8px;
-        flex-wrap: nowrap;
+        flex-wrap: wrap;
+        justify-content: center;
       }
       .header-button {
-        padding: 8px 16px;
-        font-size: 1em;
+        padding: 12px 18px;
+        font-size: 1.1em;
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         white-space: nowrap;
       }
       .card-display-wrapper {

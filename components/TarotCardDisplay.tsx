@@ -176,33 +176,35 @@ interface TarotCardDisplayProps {
   isShuffling: boolean;
 }
 
+const getRussianVoice = (): SpeechSynthesisVoice | null => {
+  const allVoices = window.speechSynthesis.getVoices();
+  if (allVoices.length === 0) {
+    return null;
+  }
+  const maleVoiceMatcher = /male|muzh|mikhail|dmitry|мужской|муж|yuri/i;
+  const russianLangMatcher = /^ru(-RU)?$/i;
+
+  return (
+    allVoices.find(v => russianLangMatcher.test(v.lang) && maleVoiceMatcher.test(v.name)) ||
+    allVoices.find(v => russianLangMatcher.test(v.lang)) ||
+    null
+  );
+};
+
+
 const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling }) => {
   const [speakingSection, setSpeakingSection] = useState<string | null>(null);
   const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
 
-  const findAndSetVoice = useCallback(() => {
-    const allVoices = window.speechSynthesis.getVoices();
-    if (allVoices.length === 0) {
-      return;
-    }
-
-    const maleVoiceMatcher = /male|muzh|mikhail|муж|yuri/i;
-    const russianLangMatcher = /^ru(-RU)?$/i;
-
-    const finalVoice = 
-      allVoices.find(v => russianLangMatcher.test(v.lang) && maleVoiceMatcher.test(v.name)) ||
-      allVoices.find(v => russianLangMatcher.test(v.lang)) ||
-      allVoices.find(v => maleVoiceMatcher.test(v.name)) ||
-      allVoices[0];
-
-    if (finalVoice) {
-      setSelectedVoice(finalVoice);
-    }
-  }, []);
-
   useEffect(() => {
-    findAndSetVoice();
-    window.speechSynthesis.onvoiceschanged = findAndSetVoice;
+    const setVoice = () => {
+      const voice = getRussianVoice();
+      if (voice) {
+        setSelectedVoice(voice);
+      }
+    };
+    setVoice();
+    window.speechSynthesis.onvoiceschanged = setVoice;
 
     return () => {
       window.speechSynthesis.onvoiceschanged = null;
@@ -210,7 +212,7 @@ const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling }
         window.speechSynthesis.cancel();
       }
     };
-  }, [findAndSetVoice]);
+  }, []);
 
   const handleSpeak = useCallback((text: string, sectionId: string) => {
     if (speakingSection === sectionId) {
@@ -226,20 +228,9 @@ const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling }
     let voiceToUse = selectedVoice;
 
     if (!voiceToUse) {
-      findAndSetVoice(); 
-      const allVoices = window.speechSynthesis.getVoices();
-      if (allVoices.length > 0) {
-        const maleVoiceMatcher = /male|muzh|mikhail|муж|yuri/i;
-        const russianLangMatcher = /^ru(-RU)?$/i;
-        voiceToUse = 
-            allVoices.find(v => russianLangMatcher.test(v.lang) && maleVoiceMatcher.test(v.name)) ||
-            allVoices.find(v => russianLangMatcher.test(v.lang)) ||
-            allVoices.find(v => maleVoiceMatcher.test(v.name)) ||
-            allVoices[0] || null;
-        
-        if (voiceToUse && !selectedVoice) {
-            setSelectedVoice(voiceToUse);
-        }
+      voiceToUse = getRussianVoice();
+      if (voiceToUse) {
+        setSelectedVoice(voiceToUse);
       }
     }
     
@@ -252,6 +243,8 @@ const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling }
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.voice = voiceToUse;
     utterance.lang = 'ru-RU';
+    utterance.pitch = 1;
+    utterance.rate = 1;
     
     utterance.onstart = () => setSpeakingSection(sectionId);
     utterance.onend = () => setSpeakingSection(null);
@@ -261,7 +254,7 @@ const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling }
     };
     
     window.speechSynthesis.speak(utterance);
-  }, [selectedVoice, speakingSection, findAndSetVoice]);
+  }, [selectedVoice, speakingSection]);
 
   useEffect(() => {
     if (window.speechSynthesis.speaking) {
