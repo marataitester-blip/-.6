@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 const InitialCardViewStyles = () => (
@@ -36,7 +37,6 @@ const InitialCardViewStyles = () => (
       height: auto;
       border-radius: 12px;
       box-shadow: 0 8px 30px rgba(0,0,0,0.6), 0 0 40px rgba(240, 196, 117, 0.3);
-      margin-bottom: 24px;
       animation: subtle-float 6s ease-in-out infinite;
       cursor: pointer;
     }
@@ -46,6 +46,8 @@ const InitialCardViewStyles = () => (
       color: var(--accent);
       max-width: 400px;
       text-shadow: 0 0 10px rgba(240, 196, 117, 0.3);
+      margin-bottom: 24px;
+      line-height: 1.2;
     }
     @media (max-width: 767px) {
       .initial-card-image {
@@ -67,16 +69,16 @@ const InitialCardView: React.FC<InitialCardViewProps> = ({ onCardClick }) => {
     <>
       <InitialCardViewStyles />
       <div className="initial-card-view">
+        <p className="initial-card-text">
+          Задайте вопрос. Коснитесь карты, чтобы получить ответ.
+        </p>
         <img 
           src="https://cdn.jsdelivr.net/gh/marataitester-blip/tarot/rubashka.png" 
           alt="Рубашка карты Таро" 
           className="initial-card-image"
           onClick={onCardClick}
-          title="Что скажет Карта?"
+          title="Получить ответ"
         />
-        <p className="initial-card-text">
-          Выберите карту или доверьтесь судьбе, нажав «Что скажет Карта?»
-        </p>
       </div>
     </>
   );

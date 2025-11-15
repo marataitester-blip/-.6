@@ -163,19 +163,32 @@ const CardDisplayStyles = () => (
       box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
     }
 
-
     @media (max-width: 767px) {
+      .card-video-container {
+        margin: 8px 0;
+      }
       .card-title { 
         font-size: 1.8em;
+        margin: 8px 0 4px;
       }
       .card-keyword {
         font-size: 1.3em;
+        margin-bottom: 16px;
+      }
+      .content-block {
+        margin-top: 10px;
+        padding: 12px;
       }
       .content-block h4 {
         font-size: 1.4em;
+        margin-bottom: 6px;
       }
       .content-block p, .content-block span, .aspect-item span {
         font-size: 1.15em;
+        line-height: 1.4;
+      }
+      .aspects {
+        gap: 8px;
       }
       .speaker-button {
         color: #ffd700; /* Make golden on mobile */
@@ -183,6 +196,10 @@ const CardDisplayStyles = () => (
       .speaker-button svg {
         width: 40px; /* Increased size */
         height: 40px;
+      }
+      .master-response-container {
+        margin-top: 16px;
+        padding-bottom: 8px;
       }
       .master-response-button {
         font-size: 1.3em;

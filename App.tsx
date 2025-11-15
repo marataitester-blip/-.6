@@ -6,15 +6,6 @@ import CardSelector from './components/CardSelector';
 import TarotCardDisplay from './components/TarotCardDisplay';
 import InitialCardView from './components/InitialCardView';
 
-interface BeforeInstallPromptEvent extends Event {
-  readonly platforms: Array<string>;
-  readonly userChoice: Promise<{
-    outcome: 'accepted' | 'dismissed',
-    platform: string,
-  }>;
-  prompt(): Promise<void>;
-}
-
 const GlobalStyles = () => (
   <style>{`
     :root { 
@@ -79,64 +70,6 @@ const GlobalStyles = () => (
       margin: 0;
       text-shadow: 0 0 10px rgba(240, 196, 117, 0.5);
     }
-    .header-buttons {
-      margin-top: 12px;
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 12px;
-      align-items: center;
-    }
-    .header-button {
-      background: transparent;
-      color: var(--accent);
-      padding: 5px 14px;
-      border-radius: 18px;
-      text-decoration: none;
-      font-family: "Cinzel", serif;
-      border: 1px solid var(--accent);
-      cursor: pointer;
-      transition: all 0.3s ease;
-      font-size: 0.8em;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-    }
-    .header-button:hover:not(:disabled) {
-      background: var(--accent);
-      color: var(--bg);
-    }
-    .header-button:disabled, .header-button.disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      pointer-events: none;
-    }
-
-    .header-button.pulsate {
-      border-color: gold;
-      color: gold;
-      animation: expressive-pulse 2s infinite;
-    }
-    .header-button.pulsate:hover:not(:disabled) {
-        background: gold;
-        color: var(--bg);
-    }
-
-    @keyframes expressive-pulse {
-      0% {
-        transform: scale(1);
-        box-shadow: 0 0 5px rgba(255, 215, 0, 0.3), 0 0 10px rgba(255, 215, 0, 0.2);
-      }
-      50% {
-        transform: scale(1.05);
-        box-shadow: 0 0 20px rgba(255, 215, 0, 0.7), 0 0 30px rgba(255, 215, 0, 0.5);
-      }
-      100% {
-        transform: scale(1);
-        box-shadow: 0 0 5px rgba(255, 215, 0, 0.3), 0 0 10px rgba(255, 215, 0, 0.2);
-      }
-    }
     
     .card-display-wrapper {
       margin-top: 24px;
@@ -186,17 +119,6 @@ const GlobalStyles = () => (
         letter-spacing: 1px;
         white-space: nowrap;
       }
-      .header-buttons {
-        gap: 6px;
-        margin-top: 8px;
-        flex-wrap: nowrap;
-        justify-content: center;
-      }
-      .header-button {
-        padding: 6px 12px;
-        font-size: 0.85em;
-        white-space: nowrap;
-      }
       .card-display-wrapper {
         margin-top: 16px;
       }
@@ -229,7 +151,6 @@ const preloadCardMedia = (card: TarotCardData): Promise<void> => {
 
 const App: React.FC = () => {
   const [selectedCard, setSelectedCard] = useState<TarotCardData | null>(null);
-  const [installPromptEvent, setInstallPromptEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [isShuffling, setIsShuffling] = useState(false);
   const shuffleIntervalRef = useRef<number | null>(null);
 
@@ -257,40 +178,7 @@ const App: React.FC = () => {
           });
       });
     }
-    
-    // PWA install prompt handler
-    const handleBeforeInstallPrompt = (event: Event) => {
-      event.preventDefault();
-      setInstallPromptEvent(event as BeforeInstallPromptEvent);
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    };
   }, []);
-
-  const handleInstallClick = useCallback(() => {
-    playSound(clickSound);
-    if (installPromptEvent) {
-      installPromptEvent.prompt();
-      installPromptEvent.userChoice.then(choiceResult => {
-        if (choiceResult.outcome === 'accepted') {
-          console.log('User accepted the install prompt');
-        } else {
-          console.log('User dismissed the install prompt');
-        }
-        setInstallPromptEvent(null);
-      });
-    } else {
-      alert(
-        'Чтобы добавить приложение на главный экран:\n\n' +
-        'На iPhone: Нажмите "Поделиться" в Safari, затем "На экран \'Домой\'".\n' +
-        'На Android: Откройте меню браузера и выберите "Установить приложение" или "Добавить на главный экран".'
-      );
-    }
-  }, [installPromptEvent, playSound, clickSound]);
 
   const handleCardSelect = useCallback((card: TarotCardData) => {
     if (isShuffling) return;
@@ -384,28 +272,6 @@ const App: React.FC = () => {
                 <h1 className="app-title">
                   ASTRAL HERO TAROT
                 </h1>
-              </div>
-              <div className="header-buttons">
-                <button 
-                  onClick={handleRandomCardSelect}
-                  disabled={isShuffling}
-                  className="header-button pulsate"
-                >
-                  Что скажет Карта?
-                </button>
-                <button 
-                  onClick={handleInstallClick}
-                  disabled={isShuffling}
-                  className={`header-button ${installPromptEvent ? 'pulsate' : ''}`}
-                  title={installPromptEvent ? 'Установить приложение' : 'Как установить приложение'}
-                >
-                  <svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                    <polyline points="7 10 12 15 17 10" />
-                    <line x1="12" y1="15" x2="12" y2="3" />
-                  </svg>
-                  Установить
-                </button>
               </div>
             </header>
             
