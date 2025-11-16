@@ -50,9 +50,11 @@ const CardSelectorStyles = () => (
       color: var(--fg);
     }
     .card-selector-button.active {
-      background: var(--accent);
+      background: linear-gradient(145deg, #f0c475, #c89b4a);
       color: var(--bg);
-      font-weight: 600;
+      font-weight: 700;
+      border-color: rgba(255, 255, 255, 0.5);
+      box-shadow: 0 0 8px rgba(240, 196, 117, 0.6);
     }
     
     @media (max-width: 767px) {

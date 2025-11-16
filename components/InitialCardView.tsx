@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 const InitialCardViewStyles = () => (
@@ -39,6 +38,7 @@ const InitialCardViewStyles = () => (
       box-shadow: 0 8px 30px rgba(0,0,0,0.6), 0 0 40px rgba(240, 196, 117, 0.3);
       animation: subtle-float 6s ease-in-out infinite;
       cursor: pointer;
+      margin-top: 28px;
     }
     .initial-card-text {
       font-family: "Cinzel", serif;
@@ -46,12 +46,14 @@ const InitialCardViewStyles = () => (
       color: var(--accent);
       max-width: 400px;
       text-shadow: 0 0 10px rgba(240, 196, 117, 0.3);
-      margin-bottom: 24px;
+      margin-bottom: 0;
       line-height: 1.2;
     }
+    
     @media (max-width: 767px) {
       .initial-card-image {
         max-width: 250px;
+        margin-top: 24px;
       }
       .initial-card-text {
         font-size: 1.2em;

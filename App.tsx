@@ -71,6 +71,23 @@ const GlobalStyles = () => (
       text-shadow: 0 0 10px rgba(240, 196, 117, 0.5);
     }
     
+    .shuffle-button {
+      background: transparent;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-family: "Cinzel", serif;
+      font-size: 0.8em;
+      transition: all 0.3s ease;
+      white-space: nowrap;
+    }
+    .shuffle-button:hover {
+      background: rgba(240, 196, 117, 0.1);
+      box-shadow: 0 0 5px rgba(240, 196, 117, 0.5);
+    }
+    
     .card-display-wrapper {
       margin-top: 24px;
       transition: filter 0.4s ease-out, transform 0.4s ease-out, flex-grow 0.5s ease;
@@ -114,10 +131,17 @@ const GlobalStyles = () => (
       .app-header {
         margin: 8px 0;
       }
+      .title-wrapper {
+        gap: 8px;
+      }
       .app-title {
         font-size: 1.6em;
         letter-spacing: 1px;
         white-space: nowrap;
+      }
+      .shuffle-button {
+        padding: 5px 10px;
+        font-size: 0.7em;
       }
       .card-display-wrapper {
         margin-top: 16px;
@@ -272,6 +296,15 @@ const App: React.FC = () => {
                 <h1 className="app-title">
                   ASTRAL HERO TAROT
                 </h1>
+                {selectedCard && !isShuffling && (
+                  <button
+                    onClick={handleRandomCardSelect}
+                    className="shuffle-button"
+                    title="Получить другую случайную карту"
+                  >
+                    Перемешать
+                  </button>
+                )}
               </div>
             </header>
             

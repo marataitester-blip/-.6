@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import type { TarotCardData } from '../types';
 
@@ -13,6 +14,17 @@ const CardDisplayStyles = () => (
         opacity: 1; 
         transform: scale(1) translateY(0);
         filter: blur(0) brightness(1);
+      }
+    }
+    @keyframes shimmer-glow {
+      0% {
+        box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4), 0 0 5px rgba(255, 215, 0, 0.2);
+      }
+      50% {
+        box-shadow: 0 6px 25px rgba(255, 215, 0, 0.7), 0 0 20px rgba(255, 215, 0, 0.5);
+      }
+      100% {
+        box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4), 0 0 5px rgba(255, 215, 0, 0.2);
       }
     }
     .card-display-container {
@@ -46,7 +58,6 @@ const CardDisplayStyles = () => (
       text-align: center; 
       color: var(--muted); 
       font-size: 1.1em; 
-      margin-bottom: 24px;
     }
     .interpretation-grid {
       display: grid;
@@ -130,38 +141,6 @@ const CardDisplayStyles = () => (
       width: 24px;
       height: 24px;
     }
-    
-    .master-response-container {
-      margin-top: 24px;
-      padding-bottom: 16px;
-      text-align: center;
-    }
-    
-    .master-response-button {
-      display: inline-block;
-      padding: 12px 24px;
-      font-family: "Cinzel", serif;
-      font-size: 1.2em;
-      font-weight: 700;
-      color: #0a0914;
-      background: linear-gradient(145deg, #f0c475, #ffd700);
-      border: none;
-      border-radius: 50px;
-      text-decoration: none;
-      box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
-      transition: all 0.3s ease;
-      cursor: pointer;
-    }
-    
-    .master-response-button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(255, 215, 0, 0.6);
-    }
-    
-    .master-response-button:active {
-      transform: translateY(0);
-      box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
-    }
 
     @media (max-width: 767px) {
       .card-video-container {
@@ -173,7 +152,6 @@ const CardDisplayStyles = () => (
       }
       .card-keyword {
         font-size: 1.3em;
-        margin-bottom: 16px;
       }
       .content-block {
         margin-top: 10px;
@@ -196,14 +174,6 @@ const CardDisplayStyles = () => (
       .speaker-button svg {
         width: 40px; /* Increased size */
         height: 40px;
-      }
-      .master-response-container {
-        margin-top: 16px;
-        padding-bottom: 8px;
-      }
-      .master-response-button {
-        font-size: 1.3em;
-        padding: 14px 28px;
       }
     }
   `}</style>
@@ -454,19 +424,9 @@ const TarotCardDisplay: React.FC<TarotCardDisplayProps> = ({ card, isShuffling }
               </h4>
               <p><em>{card.interpretation.intent}</em></p>
             </div>
-            
-            <div className="master-response-container">
-              <a
-                href="https://t.me/otvety_mastera_astralhero_tarot"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="master-response-button"
-              >
-                Соединитесь с телеграмм
-              </a>
-            </div>
           </div>
         </div>
+
       </div>
     </>
   );
